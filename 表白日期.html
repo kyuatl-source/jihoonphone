@@ -1,0 +1,1843 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f6f5f1" />
+    <title>表白日期建议 · 个性化问答</title>
+    <style>
+      /* =========================================================
+         B. 样式模块
+         所有颜色、间距、圆角集中在这里，方便统一调整。
+         ========================================================= */
+      :root {
+        --bg: #f6f5f1;
+        --surface: #fffdf9;
+        --surface-2: #f7f4ed;
+        --surface-3: #f1ede3;
+        --ink: #1b1b1d;
+        --ink-soft: #35353a;
+        --muted: #6f6a60;
+        --line: #e5dfd3;
+        --accent: #0c7c5b;
+        --accent-ink: #075c43;
+        --accent-soft: #e4f3ec;
+        --accent-line: #b9dfd0;
+        --amber: #9a6a16;
+        --amber-soft: #fbf1dc;
+        --amber-line: #ecd7a8;
+        --danger: #b3261e;
+        --danger-soft: #fdecea;
+        --danger-line: #f2c9c5;
+        --radius: 20px;
+        --radius-md: 14px;
+        --radius-sm: 10px;
+        --shadow: 0 12px 34px rgba(40, 34, 20, 0.08);
+        --shadow-sm: 0 3px 12px rgba(40, 34, 20, 0.05);
+        --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+        --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #111310;
+          --surface: #191b18;
+          --surface-2: #20231f;
+          --surface-3: #272b25;
+          --ink: #f1f0ea;
+          --ink-soft: #dcdbd3;
+          --muted: #a6a49b;
+          --line: #2e332d;
+          --accent: #48d0a2;
+          --accent-ink: #8fe9c7;
+          --accent-soft: #163025;
+          --accent-line: #245743;
+          --amber: #e3b45e;
+          --amber-soft: #332a16;
+          --amber-line: #4d3d1f;
+          --danger: #ff938a;
+          --danger-soft: #3a1d19;
+          --danger-line: #5a2b25;
+          --shadow: 0 12px 34px rgba(0, 0, 0, 0.38);
+          --shadow-sm: 0 3px 12px rgba(0, 0, 0, 0.25);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        -webkit-text-size-adjust: 100%;
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: var(--bg);
+        font: 16px/1.68 var(--font);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        background:
+          radial-gradient(900px 480px at 8% -6%, rgba(12, 124, 91, 0.09), transparent 60%),
+          radial-gradient(720px 420px at 100% 4%, rgba(200, 160, 80, 0.09), transparent 62%);
+      }
+
+      :focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: 3px;
+        border-radius: 6px;
+      }
+
+      .app {
+        width: min(900px, 100% - 40px);
+        margin: 0 auto;
+        padding: 56px 0 64px;
+      }
+
+      /* ---------- 头部 ---------- */
+      .hero {
+        padding: 0 4px 26px;
+      }
+
+      .eyebrow {
+        margin: 0 0 12px;
+        color: var(--accent-ink);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+      }
+
+      .hero h1 {
+        margin: 0;
+        font-size: clamp(27px, 5vw, 38px);
+        line-height: 1.24;
+        letter-spacing: -0.02em;
+        font-weight: 700;
+      }
+
+      .lede {
+        margin: 14px 0 0;
+        max-width: 620px;
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      /* ---------- 面板 ---------- */
+      .panel {
+        margin: 0 0 22px;
+        padding: clamp(20px, 4.2vw, 32px);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .section-title {
+        margin: 0 0 14px;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        color: var(--muted);
+      }
+
+      .initial-answer {
+        margin: 0;
+        font-size: clamp(17px, 2.4vw, 19px);
+        line-height: 1.75;
+        color: var(--ink);
+      }
+
+      .fineprint {
+        margin: 18px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      /* ---------- 初始日期卡片 ---------- */
+      .date-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 24px;
+      }
+
+      .date-card {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 16px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+      }
+
+      .date-top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .date-name {
+        font-size: 17px;
+        font-weight: 700;
+      }
+
+      .date-when {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .atmo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .pips {
+        display: inline-flex;
+        gap: 3px;
+      }
+
+      .pips i {
+        width: 13px;
+        height: 5px;
+        border-radius: 99px;
+        background: var(--line);
+      }
+
+      .pips i.on {
+        background: var(--accent);
+      }
+
+      .atmo-num {
+        font-variant-numeric: tabular-nums;
+      }
+
+      .date-card p {
+        margin: 0;
+        font-size: 13.5px;
+        line-height: 1.62;
+        color: var(--ink-soft);
+      }
+
+      .date-card p + p {
+        color: var(--muted);
+      }
+
+      /* ---------- 提问 ---------- */
+      .ask-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .ask-head h2 {
+        margin: 0;
+        font-size: 20px;
+        letter-spacing: -0.01em;
+      }
+
+      .steps {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .step {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 5px 11px 5px 6px;
+        border-radius: 999px;
+        background: var(--surface-2);
+        color: var(--muted);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .step-num {
+        display: inline-grid;
+        place-items: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        font-size: 11px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .step.current {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+      }
+
+      .step.current .step-num {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+
+      .step.done:not(.current) {
+        color: var(--accent-ink);
+      }
+
+      .step.done:not(.current) .step-num {
+        background: var(--accent-soft);
+        border-color: var(--accent-line);
+        color: var(--accent-ink);
+      }
+
+      .q-card {
+        animation: rise 0.22s ease both;
+      }
+
+      .q-head {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        margin-bottom: 6px;
+      }
+
+      .q-total {
+        opacity: 0.7;
+      }
+
+      .q-title {
+        margin: 0;
+        font-size: 19px;
+        line-height: 1.45;
+      }
+
+      .q-hint {
+        margin: 6px 0 16px;
+        color: var(--muted);
+        font-size: 13.5px;
+      }
+
+      .options {
+        display: grid;
+        gap: 10px;
+      }
+
+      .option {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        width: 100%;
+        padding: 13px 15px;
+        text-align: left;
+        background: var(--surface);
+        color: var(--ink);
+        border: 1.5px solid var(--line);
+        border-radius: var(--radius-md);
+        font: inherit;
+        cursor: pointer;
+        transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+      }
+
+      .option:hover {
+        border-color: var(--accent-line);
+        background: var(--surface-2);
+      }
+
+      .option:active {
+        transform: scale(0.995);
+      }
+
+      .option-mark {
+        flex: 0 0 auto;
+        display: grid;
+        place-items: center;
+        width: 20px;
+        height: 20px;
+        margin-top: 2px;
+        border: 1.5px solid var(--line);
+        border-radius: 50%;
+        background: var(--surface);
+      }
+
+      .option-mark::after {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: transparent;
+      }
+
+      .option.selected {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .option.selected .option-mark {
+        border-color: var(--accent);
+        background: var(--accent);
+      }
+
+      .option.selected .option-mark::after {
+        background: #fff;
+      }
+
+      .option-body {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+
+      .option-label {
+        font-size: 15.5px;
+        font-weight: 600;
+      }
+
+      .option-desc {
+        color: var(--muted);
+        font-size: 13.5px;
+        line-height: 1.55;
+      }
+
+      .option.selected .option-desc {
+        color: var(--accent-ink);
+      }
+
+      .ask-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      .ask-actions .btn:first-child {
+        margin-right: auto;
+      }
+
+      /* ---------- 按钮 ---------- */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 44px;
+        padding: 10px 18px;
+        border: 1px solid transparent;
+        border-radius: 12px;
+        background: transparent;
+        color: var(--ink);
+        font: inherit;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease,
+          transform 0.16s ease;
+      }
+
+      .btn:active {
+        transform: translateY(1px);
+      }
+
+      .btn.primary {
+        background: var(--ink);
+        color: var(--surface);
+      }
+
+      .btn.primary:hover {
+        background: var(--ink-soft);
+      }
+
+      .btn.ghost {
+        border-color: var(--line);
+        background: transparent;
+      }
+
+      .btn.ghost:hover {
+        background: var(--surface-2);
+        border-color: var(--accent-line);
+      }
+
+      .btn.text {
+        padding-inline: 8px;
+        color: var(--muted);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        font-weight: 500;
+      }
+
+      .btn.text:hover {
+        color: var(--ink);
+      }
+
+      .btn[disabled] {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      /* ---------- 提示与状态 ---------- */
+      .notice {
+        margin-top: 14px;
+        padding: 11px 14px;
+        border-radius: var(--radius-sm);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .notice.error {
+        background: var(--danger-soft);
+        border: 1px solid var(--danger-line);
+        color: var(--danger);
+      }
+
+      .status-line {
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 13.5px;
+      }
+
+      /* ---------- 结果 ---------- */
+      .result-panel {
+        scroll-margin-top: 20px;
+        animation: rise 0.32s ease both;
+      }
+
+      .result-head {
+        padding-bottom: 18px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin-bottom: 12px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 11px;
+        border-radius: 999px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .badge.accent {
+        background: var(--accent-soft);
+        border-color: var(--accent-line);
+        color: var(--accent-ink);
+      }
+
+      .result-title {
+        margin: 0;
+        font-size: clamp(22px, 3.6vw, 29px);
+        line-height: 1.35;
+        letter-spacing: -0.015em;
+      }
+
+      .result-sub {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font-size: 14.5px;
+        line-height: 1.66;
+      }
+
+      .result-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .module {
+        padding-top: 24px;
+        margin-top: 24px;
+        border-top: 1px solid var(--line);
+      }
+
+      .module:first-child {
+        border-top: 0;
+      }
+
+      .module-title {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin: 0 0 12px;
+        font-size: 17px;
+        letter-spacing: -0.01em;
+      }
+
+      .module-title .kicker {
+        color: var(--accent-ink);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .module p {
+        margin: 0 0 10px;
+        color: var(--ink-soft);
+        font-size: 15px;
+        line-height: 1.78;
+      }
+
+      .module p:last-child {
+        margin-bottom: 0;
+      }
+
+      .rank-line {
+        margin-top: 12px !important;
+        padding: 10px 13px;
+        background: var(--surface-2);
+        border-radius: var(--radius-sm);
+        color: var(--muted) !important;
+        font-size: 13px !important;
+      }
+
+      /* 结果里的日期比较 */
+      .cmp-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .cmp-card {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 14px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+      }
+
+      .cmp-card.top {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .cmp-rank {
+        align-self: flex-start;
+        padding: 2px 9px;
+        border-radius: 999px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+
+      .cmp-card.top .cmp-rank {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+
+      .cmp-name {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 6px;
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .cmp-name span {
+        color: var(--muted);
+        font-size: 11.5px;
+        font-weight: 500;
+      }
+
+      .cmp-note {
+        margin: 0;
+        color: var(--ink-soft);
+        font-size: 13px;
+        line-height: 1.62;
+      }
+
+      .cmp-lens {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12.5px;
+        line-height: 1.58;
+      }
+
+      /* 行动方案 */
+      .approach {
+        padding: 15px 16px;
+        border-radius: var(--radius-md);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+      }
+
+      .approach-summary {
+        margin: 0 0 10px !important;
+        font-size: 14px !important;
+      }
+
+      .approach-label {
+        display: block;
+        margin-bottom: 7px;
+        color: var(--accent-ink);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+      }
+
+      .steps-list {
+        margin: 0;
+        padding-left: 20px;
+        display: grid;
+        gap: 7px;
+      }
+
+      .steps-list li {
+        color: var(--ink-soft);
+        font-size: 14px;
+        line-height: 1.66;
+      }
+
+      .plan-sub {
+        margin: 18px 0 9px !important;
+        color: var(--ink) !important;
+        font-size: 14px !important;
+        font-weight: 700;
+      }
+
+      .plan-list {
+        display: grid;
+        gap: 8px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .plan-item {
+        display: grid;
+        grid-template-columns: 44px 1fr;
+        gap: 10px;
+        align-items: start;
+        padding: 10px 12px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+      }
+
+      .phase {
+        display: inline-block;
+        padding: 2px 0;
+        color: var(--accent-ink);
+        font-size: 12px;
+        font-weight: 700;
+        text-align: center;
+      }
+
+      .plan-text {
+        color: var(--ink-soft);
+        font-size: 14px;
+        line-height: 1.62;
+      }
+
+      /* 话术 */
+      .script-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .script-card {
+        padding: 14px 16px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--accent);
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      }
+
+      .script-label {
+        display: inline-block;
+        margin-bottom: 6px;
+        color: var(--muted);
+        font-size: 11.5px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+      }
+
+      .script-text {
+        margin: 0;
+        color: var(--ink);
+        font-size: 15px;
+        line-height: 1.75;
+      }
+
+      .script-when {
+        display: block;
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 12.5px;
+        line-height: 1.6;
+      }
+
+      .module-note {
+        margin-top: 12px !important;
+        color: var(--muted) !important;
+        font-size: 12.5px !important;
+      }
+
+      /* 注意事项 */
+      .caution-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 8px;
+      }
+
+      .caution-list li {
+        position: relative;
+        padding: 10px 13px 10px 34px;
+        background: var(--amber-soft);
+        border: 1px solid var(--amber-line);
+        border-radius: var(--radius-sm);
+        color: var(--ink-soft);
+        font-size: 14px;
+        line-height: 1.62;
+      }
+
+      .caution-list li::before {
+        content: "!";
+        position: absolute;
+        left: 12px;
+        top: 11px;
+        display: grid;
+        place-items: center;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background: var(--amber);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      /* 结果操作区 */
+      .result-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 26px;
+        padding-top: 22px;
+        border-top: 1px solid var(--line);
+      }
+
+      .result-actions .btn.text {
+        margin-left: auto;
+      }
+
+      /* 规则追踪 */
+      .trace {
+        margin-top: 20px;
+        padding: 12px 14px;
+        border: 1px dashed var(--line);
+        border-radius: var(--radius-sm);
+        color: var(--muted);
+        font-size: 12.5px;
+      }
+
+      .trace summary {
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .trace ul {
+        margin: 10px 0 0;
+        padding-left: 18px;
+        display: grid;
+        gap: 5px;
+      }
+
+      .trace li {
+        line-height: 1.55;
+      }
+
+      .trace-id {
+        color: var(--ink-soft);
+        font-family: var(--mono);
+        font-size: 11.5px;
+      }
+
+      .trace-shadow {
+        color: var(--amber);
+      }
+
+      .trace-scores {
+        margin: 10px 0 0;
+        padding-top: 9px;
+        border-top: 1px dashed var(--line);
+        font-family: var(--mono);
+        font-size: 11.5px;
+      }
+
+      /* ---------- 追问 ---------- */
+      .followup-panel h2 {
+        margin: 0 0 4px;
+        font-size: 20px;
+      }
+
+      .followup-panel .muted {
+        margin: 0 0 14px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .chip {
+        padding: 8px 14px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--surface);
+        color: var(--ink-soft);
+        font: inherit;
+        font-size: 13.5px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+      }
+
+      .chip:hover {
+        border-color: var(--accent-line);
+        background: var(--surface-2);
+      }
+
+      .chip.active {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+        color: var(--accent-ink);
+      }
+
+      .followup-body {
+        margin-top: 16px;
+      }
+
+      .followup-body:empty {
+        display: none;
+      }
+
+      .followup-card {
+        padding: 16px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        animation: rise 0.22s ease both;
+      }
+
+      .followup-card h3 {
+        margin: 0 0 10px;
+        font-size: 16px;
+      }
+
+      .followup-card p {
+        margin: 0 0 10px;
+        color: var(--ink-soft);
+        font-size: 14.5px;
+        line-height: 1.72;
+      }
+
+      .followup-card ul {
+        margin: 0 0 10px;
+        padding-left: 20px;
+        display: grid;
+        gap: 6px;
+      }
+
+      .followup-card li {
+        color: var(--ink-soft);
+        font-size: 14px;
+        line-height: 1.66;
+      }
+
+      .followup-card .module-note {
+        margin-bottom: 0 !important;
+      }
+
+      /* ---------- 页脚 ---------- */
+      .page-foot {
+        padding: 8px 4px 0;
+        color: var(--muted);
+        font-size: 12.5px;
+        line-height: 1.7;
+      }
+
+      .page-foot p {
+        margin: 0;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .app {
+          width: min(100% - 24px, 640px);
+          padding: 34px 0 48px;
+        }
+
+        .date-grid,
+        .cmp-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .date-card {
+          padding: 14px;
+        }
+
+        .ask-head {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .result-actions .btn.text {
+          margin-left: 0;
+        }
+
+        .plan-item {
+          grid-template-columns: 40px 1fr;
+        }
+      }
+
+      @media (max-width: 420px) {
+        .option {
+          padding: 12px 13px;
+        }
+
+        .steps {
+          width: 100%;
+        }
+
+        .step {
+          flex: 1;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.001ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.001ms !important;
+        }
+
+        html {
+          scroll-behavior: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- =========================================================
+           A. HTML 结构模块
+           ========================================================= -->
+      <header class="hero">
+        <p class="eyebrow">PERSONAL ADVISOR</p>
+        <h1>和女生表白，选择哪个日期？</h1>
+        <p class="lede">
+          先看通用结论，再回答两个问题。日期推荐、当天安排和话术都会按你们的实际情况重新生成。
+        </p>
+      </header>
+
+      <main>
+        <!-- 初始答案 -->
+        <section class="panel" aria-labelledby="initialTitle">
+          <h2 class="section-title" id="initialTitle">先说结论</h2>
+          <p class="initial-answer">
+            如果是想和女生表白，在平安夜、圣诞节、元旦这三个时间里，我最推荐平安夜，其次是圣诞节，最后是元旦。不过，真正决定表白效果的不是节日本身，而是你们目前的关系，以及她是否也对你有好感。
+          </p>
+          <div class="date-grid" id="dateCards"></div>
+          <p class="fineprint">
+            下面的个性化建议只使用你选择的两个条件；没有问到的信息，我不会替你假设。
+          </p>
+        </section>
+
+        <!-- 提问 -->
+        <section class="panel" id="ask" aria-labelledby="askTitle">
+          <div class="ask-head">
+            <h2 id="askTitle">补充两个信息</h2>
+            <div class="steps" id="stepDots" aria-hidden="true"></div>
+          </div>
+          <div id="questionMount"></div>
+          <div class="ask-actions">
+            <button type="button" class="btn ghost" id="btnPrev">上一步</button>
+            <button type="button" class="btn primary" id="btnNext">下一步</button>
+          </div>
+          <div class="notice error" id="askError" role="alert" hidden></div>
+          <p class="fineprint">还没有生成答案？先完成上面的选择，再点「生成答案」。</p>
+        </section>
+
+        <!-- 个性化结果 -->
+        <section
+          class="panel result-panel"
+          id="result"
+          aria-labelledby="resultTitle"
+          tabindex="-1"
+          hidden
+        >
+          <div class="result-head">
+            <div class="badges" id="resultBadges"></div>
+            <h2 class="result-title" id="resultTitle"></h2>
+            <p class="result-sub" id="resultSub"></p>
+            <div class="result-meta" id="resultMeta"></div>
+          </div>
+          <div id="resultBody"></div>
+          <div class="result-actions">
+            <button type="button" class="btn ghost" id="btnEdit">修改选择</button>
+            <button type="button" class="btn primary" id="btnRegen">重新生成</button>
+            <button type="button" class="btn ghost" id="btnAsk">继续追问</button>
+            <button type="button" class="btn text" id="btnReset">重新开始</button>
+          </div>
+          <div class="status-line" id="statusLine" role="status" aria-live="polite"></div>
+          <details class="trace" id="trace">
+            <summary>看看这份答案的依据</summary>
+            <ul id="traceList"></ul>
+            <p class="trace-scores" id="traceScores"></p>
+          </details>
+        </section>
+
+        <!-- 继续追问 -->
+        <section
+          class="panel followup-panel"
+          id="followup"
+          aria-labelledby="followupTitle"
+          hidden
+        >
+          <h2 id="followupTitle">继续追问</h2>
+          <p class="muted">选一个你现在最想弄明白的问题。</p>
+          <div class="chips" id="followupChips"></div>
+          <div class="followup-body" id="followupBody" aria-live="polite"></div>
+        </section>
+      </main>
+
+      <footer class="page-foot">
+        <p>
+          本页由本地规则引擎生成，不需要联网，也不会保存你的选择。推荐顺序只用于在这三个日期之间做比较，不代表表白成功率。
+        </p>
+      </footer>
+    </div>
+
+    <noscript>
+      <p style="padding: 24px">这个页面需要 JavaScript 才能生成个性化建议。</p>
+    </noscript>
+
+    <script src="advisor.js?v=1"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        /* C. 配置数据与规则引擎来自 advisor.js（与手机内的 ChatGPT 共用） */
+        const ADVISOR = window.ConfessionAdvisor;
+        if (!ADVISOR) {
+          throw new Error("advisor.js 未加载：请确认它与 表白日期.html 在同一目录。");
+        }
+        const CASE = ADVISOR.CASE;
+        const evaluateRules = ADVISOR.evaluateRules;
+        const generateAnswer = ADVISOR.generateAnswer;
+        const buildFollowUp = ADVISOR.buildFollowUp;
+
+        /* =========================================================
+           D. 用户状态模块
+           所有可变状态集中在一个对象里，通过 setState 统一更新。
+           ========================================================= */
+        const state = {
+          caseId: CASE.id,
+          currentStep: 0,
+          answers: {},
+          result: null,
+          status: "idle", // idle | generating | success | error
+          error: null,
+          notice: "",
+          followUp: null
+        };
+
+        const listeners = [];
+
+        function setState(patch) {
+          Object.assign(state, patch);
+          listeners.forEach((fn) => fn());
+        }
+
+        function subscribe(fn) {
+          listeners.push(fn);
+        }
+
+        /* E. 规则引擎模块：见 advisor.js */
+
+        /* =========================================================
+           F. 渲染模块
+           ========================================================= */
+        const $ = function (id) {
+          return document.getElementById(id);
+        };
+
+        function el(tag, className, text) {
+          const node = document.createElement(tag);
+          if (className) node.className = className;
+          if (text !== undefined && text !== null) node.textContent = text;
+          return node;
+        }
+
+        function clear(node) {
+          while (node.firstChild) node.removeChild(node.firstChild);
+        }
+
+        function pipsHtml(count) {
+          const wrap = el("span", "pips");
+          for (let i = 0; i < 5; i += 1) {
+            const pip = el("i");
+            if (i < count) pip.className = "on";
+            wrap.appendChild(pip);
+          }
+          return wrap;
+        }
+
+        function renderInitialDateCards() {
+          const wrap = $("dateCards");
+          clear(wrap);
+          Object.keys(CASE.dates).forEach(function (id) {
+            const date = CASE.dates[id];
+            const card = el("article", "date-card");
+            const top = el("div", "date-top");
+            top.appendChild(el("span", "date-name", date.name));
+            top.appendChild(el("span", "date-when", date.date));
+
+            const atmo = el("div", "atmo");
+            atmo.appendChild(el("span", "atmo-label", "氛围感"));
+            atmo.appendChild(pipsHtml(date.atmosphere));
+            atmo.appendChild(
+              el("span", "atmo-num", date.atmosphere + "/5")
+            );
+
+            card.appendChild(top);
+            card.appendChild(atmo);
+            card.appendChild(el("p", "", date.introFit));
+            card.appendChild(el("p", "", date.introDo));
+            wrap.appendChild(card);
+          });
+        }
+
+        function renderStepDots() {
+          const wrap = $("stepDots");
+          clear(wrap);
+          CASE.questions.forEach(function (question, index) {
+            const done = Boolean(state.answers[question.id]);
+            const current = index === state.currentStep;
+            const item = el(
+              "span",
+              "step" + (current ? " current" : "") + (done ? " done" : "")
+            );
+            item.appendChild(el("span", "step-num", done ? "✓" : String(index + 1)));
+            item.appendChild(el("span", "step-name", question.short));
+            wrap.appendChild(item);
+          });
+        }
+
+        function renderQuestion() {
+          const mount = $("questionMount");
+          clear(mount);
+
+          const question = CASE.questions[state.currentStep];
+          const card = el("div", "q-card");
+
+          const head = el("div", "q-head");
+          head.appendChild(el("span", "", "问题 " + (state.currentStep + 1)));
+          head.appendChild(el("span", "q-total", "/ " + CASE.questions.length));
+
+          card.appendChild(head);
+          card.appendChild(el("h3", "q-title", question.title));
+          card.appendChild(el("p", "q-hint", question.hint));
+
+          const group = el("div", "options");
+          group.setAttribute("role", "radiogroup");
+          group.setAttribute("aria-label", question.title);
+
+          question.options.forEach(function (option) {
+            const selected = state.answers[question.id] === option.id;
+            const button = el("button", "option" + (selected ? " selected" : ""));
+            button.type = "button";
+            button.dataset.qid = question.id;
+            button.dataset.oid = option.id;
+            button.setAttribute("role", "radio");
+            button.setAttribute("aria-checked", selected ? "true" : "false");
+
+            const mark = el("span", "option-mark");
+            const body = el("span", "option-body");
+            body.appendChild(el("span", "option-label", option.label));
+            body.appendChild(el("span", "option-desc", option.desc));
+
+            button.appendChild(mark);
+            button.appendChild(body);
+            group.appendChild(button);
+          });
+
+          card.appendChild(group);
+          mount.appendChild(card);
+
+          const isLast = state.currentStep === CASE.questions.length - 1;
+          $("btnPrev").disabled = state.currentStep === 0;
+          $("btnNext").textContent = isLast ? "生成答案" : "下一步";
+
+          renderStepDots();
+        }
+
+        function badge(text, accent) {
+          return el("span", "badge" + (accent ? " accent" : ""), text);
+        }
+
+        function buildReasoningModule(module) {
+          const section = el("section", "module");
+          const heading = el("h3", "module-title");
+          heading.appendChild(el("span", "kicker", "01"));
+          heading.appendChild(el("span", "", module.heading));
+          section.appendChild(heading);
+          module.paragraphs.forEach(function (text) {
+            section.appendChild(el("p", "", text));
+          });
+          section.appendChild(el("p", "rank-line", module.rankingLine));
+          return section;
+        }
+
+        function buildComparisonModule(module) {
+          const section = el("section", "module");
+          const heading = el("h3", "module-title");
+          heading.appendChild(el("span", "kicker", "02"));
+          heading.appendChild(el("span", "", module.heading));
+          section.appendChild(heading);
+
+          const grid = el("div", "cmp-grid");
+          module.items.forEach(function (item) {
+            const card = el("article", "cmp-card" + (item.top ? " top" : ""));
+            card.appendChild(
+              el("span", "cmp-rank", item.top ? "第 1 顺位 · 首选" : "第 " + item.rank + " 顺位")
+            );
+
+            const name = el("div", "cmp-name", item.name);
+            name.appendChild(el("span", "", item.date));
+            card.appendChild(name);
+
+            const atmo = el("div", "atmo");
+            atmo.appendChild(el("span", "atmo-label", "氛围感"));
+            atmo.appendChild(pipsHtml(item.atmosphere));
+            card.appendChild(atmo);
+
+            card.appendChild(el("p", "cmp-note", item.note));
+            card.appendChild(el("p", "cmp-lens", item.lens));
+            grid.appendChild(card);
+          });
+          section.appendChild(grid);
+          return section;
+        }
+
+        function buildPlanModule(module) {
+          const section = el("section", "module");
+          const heading = el("h3", "module-title");
+          heading.appendChild(el("span", "kicker", "03"));
+          heading.appendChild(el("span", "", module.heading));
+          section.appendChild(heading);
+
+          const approach = el("div", "approach");
+          approach.appendChild(el("span", "approach-label", module.approach.label));
+          approach.appendChild(el("p", "approach-summary", module.approach.summary));
+
+          const steps = el("ol", "steps-list");
+          module.approach.steps.forEach(function (text) {
+            steps.appendChild(el("li", "", text));
+          });
+          approach.appendChild(steps);
+          section.appendChild(approach);
+
+          section.appendChild(el("p", "plan-sub", "首选日当天的安排"));
+
+          const list = el("ol", "plan-list");
+          module.dayItems.forEach(function (item) {
+            const li = el("li", "plan-item");
+            li.appendChild(el("span", "phase", item.phase));
+            li.appendChild(el("span", "plan-text", item.text));
+            list.appendChild(li);
+          });
+          section.appendChild(list);
+
+          section.appendChild(el("p", "plan-sub", "说完之后"));
+          section.appendChild(el("p", "", module.after));
+          return section;
+        }
+
+        function buildScriptsModule(module) {
+          const section = el("section", "module");
+          const heading = el("h3", "module-title");
+          heading.appendChild(el("span", "kicker", "04"));
+          heading.appendChild(el("span", "", module.heading));
+          section.appendChild(heading);
+
+          const list = el("div", "script-list");
+          module.items.forEach(function (item) {
+            const card = el("div", "script-card");
+            card.appendChild(el("span", "script-label", item.label));
+            card.appendChild(el("p", "script-text", item.text));
+            if (item.when) card.appendChild(el("span", "script-when", item.when));
+            list.appendChild(card);
+          });
+          section.appendChild(list);
+          section.appendChild(el("p", "module-note", module.note));
+          return section;
+        }
+
+        function buildCautionsModule(module) {
+          const section = el("section", "module");
+          const heading = el("h3", "module-title");
+          heading.appendChild(el("span", "kicker", "05"));
+          heading.appendChild(el("span", "", module.heading));
+          section.appendChild(heading);
+
+          const list = el("ul", "caution-list");
+          module.items.forEach(function (text) {
+            list.appendChild(el("li", "", text));
+          });
+          section.appendChild(list);
+          return section;
+        }
+
+        function renderTrace(result) {
+          const list = $("traceList");
+          clear(list);
+
+          result.trace.forEach(function (entry) {
+            const li = el("li");
+            li.appendChild(el("span", "trace-id", entry.id));
+            li.appendChild(
+              el("span", "", " · " + entry.label + "（优先级 " + entry.priority + "）")
+            );
+            if (entry.shadowed.length) {
+              li.appendChild(
+                el("span", "trace-shadow", "　覆盖：" + entry.shadowed.join("；"))
+              );
+            }
+            list.appendChild(li);
+          });
+
+          const scoreLine = result.ranking
+            .map(function (item) {
+              return item.name + " " + item.score;
+            })
+            .join(" · ");
+          $("traceScores").textContent =
+            "内部分数（仅用于排序，不是成功率）：" + scoreLine;
+        }
+
+        function renderResult() {
+          const panel = $("result");
+          // 重新生成期间保留上一次的结果，避免页面高度突然塌陷。
+          const hasResult =
+            (state.status === "success" || state.status === "generating") &&
+            state.result &&
+            state.result.ok;
+          panel.hidden = !hasResult;
+          if (!hasResult) return;
+
+          const result = state.result;
+          const badges = $("resultBadges");
+          clear(badges);
+          badges.appendChild(badge("关系 · " + result.meta.relLabel, true));
+          badges.appendChild(badge("风格 · " + result.meta.styleLabel));
+          badges.appendChild(badge("首选 · " + result.meta.dateName, true));
+
+          $("resultTitle").textContent = result.title;
+          $("resultSub").textContent = result.sub;
+
+          const meta = $("resultMeta");
+          clear(meta);
+          meta.appendChild(badge("第二顺位 · " + result.meta.secondName));
+
+          const body = $("resultBody");
+          clear(body);
+          body.appendChild(buildReasoningModule(result.modules.reasoning));
+          body.appendChild(buildComparisonModule(result.modules.comparison));
+          body.appendChild(buildPlanModule(result.modules.plan));
+          body.appendChild(buildScriptsModule(result.modules.scripts));
+          body.appendChild(buildCautionsModule(result.modules.cautions));
+
+          renderTrace(result);
+        }
+
+        function renderFollowUp() {
+          const panel = $("followup");
+          const available = state.status === "success" && state.result && state.result.ok;
+          panel.hidden = !available;
+          if (!available) return;
+
+          const chips = $("followupChips");
+          clear(chips);
+          state.result.followUps.forEach(function (item) {
+            const active = state.followUp === item.id;
+            const button = el("button", "chip" + (active ? " active" : ""), item.label);
+            button.type = "button";
+            button.dataset.topic = item.id;
+            button.setAttribute("aria-pressed", active ? "true" : "false");
+            chips.appendChild(button);
+          });
+
+          const body = $("followupBody");
+          clear(body);
+          if (!state.followUp) return;
+
+          const content = buildFollowUp(state.followUp, state.result);
+          if (!content) return;
+
+          const card = el("div", "followup-card");
+          card.appendChild(el("h3", "", content.title));
+          if (content.intro) card.appendChild(el("p", "", content.intro));
+          if (content.bullets) {
+            const ul = el("ul");
+            content.bullets.forEach(function (text) {
+              ul.appendChild(el("li", "", text));
+            });
+            card.appendChild(ul);
+          }
+          if (content.paragraphs) {
+            content.paragraphs.forEach(function (text) {
+              card.appendChild(el("p", "", text));
+            });
+          }
+          if (content.note) card.appendChild(el("p", "module-note", content.note));
+          body.appendChild(card);
+        }
+
+        function renderStatus() {
+          const line = $("statusLine");
+          line.textContent = state.notice || "";
+          line.hidden = !state.notice;
+
+          const errorBox = $("askError");
+          errorBox.hidden = !state.error;
+          errorBox.textContent = state.error || "";
+
+          $("btnRegen").disabled = state.status === "generating";
+        }
+
+        function render() {
+          renderQuestion();
+          renderResult();
+          renderFollowUp();
+          renderStatus();
+        }
+
+        /* =========================================================
+           G. 事件与控制模块
+           同一个元素只注册一次监听器。
+           ========================================================= */
+        function scrollToNode(node, block) {
+          if (!node) return;
+          node.scrollIntoView({ behavior: "smooth", block: block || "start" });
+        }
+
+        function handleOptionChange(questionId, optionId) {
+          if (state.answers[questionId] === optionId) return;
+
+          const nextAnswers = Object.assign({}, state.answers);
+          nextAnswers[questionId] = optionId;
+
+          const patch = {
+            answers: nextAnswers,
+            error: null
+          };
+
+          if (state.result) {
+            patch.result = null;
+            patch.status = "idle";
+            patch.followUp = null;
+            patch.notice = "选择已更新，旧答案已清除。重新生成即可看到新的建议。";
+          }
+
+          setState(patch);
+        }
+
+        function handleNextStep() {
+          const question = CASE.questions[state.currentStep];
+          if (!state.answers[question.id]) {
+            setState({
+              status: state.result ? "success" : "error",
+              error: "先选择「" + question.title + "」中的一个选项，再继续。"
+            });
+            return;
+          }
+
+          setState({
+            error: null,
+            currentStep: state.currentStep + 1
+          });
+        }
+
+        function handlePrevStep() {
+          if (state.currentStep === 0) return;
+          setState({
+            currentStep: state.currentStep - 1,
+            error: null
+          });
+        }
+
+        function handleGenerateAnswer() {
+          if (state.status === "generating") return;
+
+          const missing = CASE.questions.filter(function (question) {
+            return !state.answers[question.id];
+          });
+
+          if (missing.length) {
+            setState({
+              status: state.result ? "success" : "error",
+              error:
+                "还缺少「" +
+                missing
+                  .map(function (question) {
+                    return question.title;
+                  })
+                  .join("」「") +
+                "」的选择。补上后再生成。"
+            });
+            scrollToNode($("ask"), "center");
+            return;
+          }
+
+          const generationCase = state.caseId;
+          setState({
+            status: "generating",
+            error: null,
+            notice: "正在按你的选择生成…"
+          });
+
+          window.setTimeout(function () {
+            if (state.caseId !== generationCase) return;
+            try {
+              const result = generateAnswer(state.answers);
+              if (!result.ok) {
+                setState({
+                  status: "error",
+                  result: null,
+                  error: "生成失败：选择信息不完整，请检查后再试。"
+                });
+                return;
+              }
+              setState({
+                status: "success",
+                result: result,
+                followUp: null,
+                notice: "已根据你的两个回答生成。"
+              });
+              scrollToNode($("result"), "start");
+              $("result").focus({ preventScroll: true });
+            } catch (error) {
+              setState({
+                status: "error",
+                result: null,
+                notice: "",
+                error: "生成时出现问题，请重试一次。"
+              });
+              if (window.console && console.error) {
+                console.error("[confession-date]", error);
+              }
+            }
+          }, 180);
+        }
+
+        function handleRegenerate() {
+          if (!state.result) {
+            handleGenerateAnswer();
+            return;
+          }
+          if (state.status === "generating") return;
+
+          const previousResult = state.result;
+          setState({
+            status: "generating",
+            error: null,
+            notice: "正在重新生成…"
+          });
+
+          window.setTimeout(function () {
+            try {
+              const result = generateAnswer(state.answers);
+              const stable =
+                JSON.stringify(result) === JSON.stringify(previousResult);
+              setState({
+                status: "success",
+                result: result,
+                followUp: null,
+                notice: stable
+                  ? "已重新生成，结果与上次一致（规则和选择都没变）。"
+                  : "已重新生成。"
+              });
+              scrollToNode($("result"), "start");
+            } catch (error) {
+              setState({
+                status: "success",
+                result: previousResult,
+                notice: "重新生成时出现问题，保留了上一次的答案。"
+              });
+              if (window.console && console.error) {
+                console.error("[confession-date]", error);
+              }
+            }
+          }, 180);
+        }
+
+        function handleEditAnswers() {
+          setState({
+            currentStep: 0,
+            error: null,
+            notice: "已回到第一步，之前的选择仍然保留。改完记得重新生成。"
+          });
+          scrollToNode($("ask"), "start");
+          const selected = $("questionMount").querySelector(".option.selected");
+          if (selected && typeof selected.focus === "function") {
+            window.setTimeout(function () {
+              selected.focus({ preventScroll: true });
+            }, 120);
+          }
+        }
+
+        function handleOpenFollowUp() {
+          if (!state.result) return;
+          $("followup").hidden = false;
+          scrollToNode($("followup"), "start");
+          const firstChip = $("followupChips").querySelector(".chip");
+          if (firstChip) {
+            window.setTimeout(function () {
+              firstChip.focus({ preventScroll: true });
+            }, 120);
+          }
+        }
+
+        function handleFollowUp(topicId) {
+          setState({
+            followUp: state.followUp === topicId ? null : topicId
+          });
+          if (state.followUp) {
+            window.setTimeout(function () {
+              scrollToNode($("followupBody"), "nearest");
+            }, 40);
+          }
+        }
+
+        function handleReset() {
+          setState({
+            currentStep: 0,
+            answers: {},
+            result: null,
+            status: "idle",
+            error: null,
+            followUp: null,
+            notice: "已清空选择，可以重新开始。"
+          });
+          scrollToNode($("ask"), "start");
+        }
+
+        function bindEvents() {
+          $("questionMount").addEventListener("click", function (event) {
+            const option = event.target.closest("[data-option]") || event.target.closest(".option");
+            if (!option) return;
+            handleOptionChange(option.dataset.qid, option.dataset.oid);
+          });
+
+          $("btnPrev").addEventListener("click", handlePrevStep);
+
+          $("btnNext").addEventListener("click", function () {
+            if (state.currentStep === CASE.questions.length - 1) {
+              handleGenerateAnswer();
+            } else {
+              handleNextStep();
+            }
+          });
+
+          $("btnEdit").addEventListener("click", handleEditAnswers);
+          $("btnRegen").addEventListener("click", handleRegenerate);
+          $("btnAsk").addEventListener("click", handleOpenFollowUp);
+          $("btnReset").addEventListener("click", handleReset);
+
+          $("followupChips").addEventListener("click", function (event) {
+            const chip = event.target.closest(".chip");
+            if (!chip) return;
+            handleFollowUp(chip.dataset.topic);
+          });
+        }
+
+        function init() {
+          renderInitialDateCards();
+          bindEvents();
+          subscribe(render);
+          render();
+        }
+
+        document.addEventListener("DOMContentLoaded", init);
+
+        // 供调试与自动化测试使用：纯函数入口不会操作页面。
+        window.confessionDateApp = {
+          config: CASE,
+          getState: function () {
+            return JSON.parse(JSON.stringify(state));
+          },
+          evaluate: generateAnswer,
+          evaluateRules: evaluateRules,
+          buildFollowUp: buildFollowUp
+        };
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Apple Music · 播放列表</title>
+<style>
+  :root{
+    --red:#fa2d48;
+    --ink:#000;
+    --grey:#8e8e93;
+    --sep:#e5e5ea;
+    --ease:cubic-bezier(.32,.72,0,1);
+    --scale:1;
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;margin:0;}
+  body{
+    overflow:hidden;
+    background:radial-gradient(80% 70% at 50% 26%,#3a1a23 0%,#170d11 42%,#09090b 100%);
+    display:grid;
+    place-items:center;
+  }
+  button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer;touch-action:manipulation;letter-spacing:inherit;}
+  svg{display:block;}
+  .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+
+  /* ===== 手机外框 ===== */
+  #phone{
+    position:relative;
+    width:393px;
+    height:852px;
+    flex:none;
+    overflow:hidden;
+    isolation:isolate;
+    background:#fff;
+    color:var(--ink);
+    border-radius:55px;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.08),
+      0 0 0 11px #141416,
+      0 0 0 12px #34343a,
+      0 48px 120px rgba(0,0,0,.72);
+    transform:scale(var(--scale)) translateZ(0);
+    transform-origin:center center;
+    --tint-a:#6f2d3f;
+    --tint-b:#d16b4d;
+  }
+
+  /* 顶部随当前封面变化的柔光 */
+  #ambient{
+    position:absolute;
+    left:-12%;
+    right:-12%;
+    top:-90px;
+    height:470px;
+    z-index:0;
+    pointer-events:none;
+    background:
+      radial-gradient(58% 78% at 20% 10%, var(--tint-a), transparent 70%),
+      radial-gradient(54% 72% at 84% 16%, var(--tint-b), transparent 72%);
+    opacity:.34;
+    filter:blur(34px) saturate(1.15);
+    -webkit-mask-image:linear-gradient(#000 0%,rgba(0,0,0,.72) 46%,transparent 100%);
+    mask-image:linear-gradient(#000 0%,rgba(0,0,0,.72) 46%,transparent 100%);
+  }
+
+  /* ===== 状态栏 + 悬浮控制栏 ===== */
+  .chrome{
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    z-index:30;
+    height:108px;
+    background:rgba(255,255,255,.85);
+    -webkit-backdrop-filter:blur(20px);
+    backdrop-filter:blur(20px);
+    box-shadow:0 .5px 0 rgba(60,60,67,.16);
+  }
+  .status{
+    height:54px;
+    padding:5px 23px 0 30px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    position:relative;
+    z-index:2;
+  }
+  .sb-time{
+    font-size:17px;
+    font-weight:600;
+    letter-spacing:-.3px;
+    font-variant-numeric:tabular-nums;
+  }
+  .sb-right{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:-.1px;
+  }
+  .sb-right .five-g{font-size:12px;letter-spacing:-.2px;}
+  .sb-right .pct{font-size:12px;font-variant-numeric:tabular-nums;}
+  .sb-right svg{color:#000;}
+  .battery{display:inline-flex;align-items:center;gap:3px;}
+  .battery svg{width:27px;height:13px;}
+
+  /* 灵动岛 */
+  .island{
+    position:absolute;
+    z-index:60;
+    top:10px;
+    left:50%;
+    transform:translateX(-50%);
+    width:126px;
+    height:36px;
+    padding:0 10px 0 7px;
+    border-radius:20px;
+    background:#000;
+    display:flex;
+    align-items:center;
+    gap:7px;
+    pointer-events:none;
+  }
+  .island-art{
+    width:24px;
+    height:24px;
+    flex:none;
+    border-radius:7px;
+    overflow:hidden;
+  }
+  .island-art .cover{width:100%;height:100%;border-radius:7px;--gs:9px;box-shadow:none;}
+  .island-eq{
+    margin-left:auto;
+    height:14px;
+    display:flex;
+    align-items:center;
+    gap:2px;
+  }
+  .island-eq b{
+    width:2.5px;
+    border-radius:2px;
+    background:#fff;
+    transform-origin:center;
+    animation:islandEq 1.05s ease-in-out infinite;
+  }
+  .island-eq b:nth-child(1){height:7px;animation-delay:-.26s;}
+  .island-eq b:nth-child(2){height:13px;animation-delay:-.55s;}
+  .island-eq b:nth-child(3){height:9px;animation-delay:-.38s;}
+  #phone:not(.is-playing) .island-eq b{animation-play-state:paused;opacity:.5;}
+  @keyframes islandEq{
+    0%,100%{transform:scaleY(.42);}
+    50%{transform:scaleY(1);}
+  }
+
+  .nav{
+    height:54px;
+    padding:0 10px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    position:relative;
+    z-index:2;
+  }
+  .nav-side{display:flex;align-items:center;gap:1px;min-width:78px;}
+  .nav-side.right{justify-content:flex-end;}
+  .icon-btn{
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    color:#1c1c1e;
+    transition:background .15s,transform .13s var(--ease),color .15s;
+  }
+  .icon-btn:active{background:rgba(118,118,128,.14);transform:scale(.93);}
+  .icon-btn svg{width:21px;height:21px;}
+  .icon-btn.shuffle svg{width:19px;height:19px;stroke-width:1.9;}
+  .icon-btn.shuffle.on{color:var(--red);background:rgba(250,45,72,.1);}
+  .icon-btn.more svg{width:19px;height:19px;}
+
+  .nav-play{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    min-width:82px;
+    height:34px;
+    padding:0 15px;
+    border-radius:17px;
+    background:#000;
+    color:#fff;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    font-size:14px;
+    font-weight:600;
+    letter-spacing:-.15px;
+    transition:transform .13s var(--ease),background .15s;
+  }
+  .nav-play:active{transform:translate(-50%,-50%) scale(.95);background:#18181a;}
+  .nav-play svg{width:11px;height:12px;flex:none;}
+  .nav-play .i-pause{display:none;}
+  #phone.is-playing .nav-play .i-play{display:none;}
+  #phone.is-playing .nav-play .i-pause{display:block;}
+
+  /* ===== 歌曲列表 ===== */
+  .content{
+    position:absolute;
+    inset:0;
+    z-index:1;
+    overflow-y:auto;
+    padding:112px 0 132px;
+    scrollbar-width:none;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  .content::-webkit-scrollbar{display:none;}
+  .songs{list-style:none;margin:0;padding:0;}
+  .song{
+    position:relative;
+    display:flex;
+    align-items:center;
+    padding:0 7px 0 0;
+  }
+  .song::after{
+    content:"";
+    position:absolute;
+    left:16px;
+    right:16px;
+    bottom:0;
+    height:.5px;
+    background:var(--sep);
+  }
+  .song:last-child::after{display:none;}
+  .song-main{
+    flex:1;
+    min-width:0;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:11px 0 11px 16px;
+    text-align:left;
+    border-radius:10px;
+  }
+  .song-main:active{background:rgba(118,118,128,.09);}
+  .meta{display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .title{
+    font-size:15px;
+    font-weight:600;
+    line-height:1.22;
+    letter-spacing:-.22px;
+    color:#000;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .artist{
+    font-size:13px;
+    line-height:1.22;
+    letter-spacing:-.08px;
+    color:var(--grey);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .song.current .title{color:var(--red);}
+  .more{
+    width:38px;
+    height:42px;
+    flex:none;
+    margin-left:2px;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    color:var(--grey);
+    transition:background .15s,transform .13s;
+  }
+  .more:active{background:rgba(118,118,128,.14);transform:scale(.93);}
+  .more svg{width:18px;height:18px;}
+
+  /* ===== 专辑封面（全部由本地 CSS 绘制，无外部图片） ===== */
+  .cover{
+    position:relative;
+    width:40px;
+    height:40px;
+    flex:none;
+    display:grid;
+    place-items:center;
+    overflow:hidden;
+    border-radius:6px;
+    background:#d8d8dd;
+    box-shadow:inset 0 0 0 .5px rgba(0,0,0,.06);
+    isolation:isolate;
+  }
+  .cover::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:0;
+    background:radial-gradient(circle at 28% 18%,rgba(255,255,255,.42),rgba(255,255,255,0) 56%);
+  }
+  .cover::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:0;
+    background:linear-gradient(155deg,rgba(0,0,0,0) 46%,rgba(0,0,0,.2));
+  }
+  .cover>i{
+    position:relative;
+    z-index:1;
+    font-family:"New York","Iowan Old Style",Georgia,"Times New Roman",serif;
+    font-style:normal;
+    font-weight:600;
+    font-size:var(--gs,15px);
+    line-height:1;
+    color:var(--ink-on-art,#fff);
+    letter-spacing:.01em;
+    text-shadow:0 1px 8px rgba(0,0,0,.16);
+  }
+  .c-recently{background:radial-gradient(circle at 74% 28%,rgba(255,255,255,.32),transparent 34%),linear-gradient(145deg,#eef3e4,#c6d9b8 52%,#8dab84);--ink-on-art:#f9fcf4;}
+  .c-phonecert{background:radial-gradient(circle at 22% 20%,rgba(255,255,255,.34),transparent 42%),linear-gradient(150deg,#f7d9c0,#e8a87c 55%,#b86b4b);--ink-on-art:#fff7ed;}
+  .c-plottwist{background:radial-gradient(circle at 75% 25%,rgba(255,255,255,.42),transparent 38%),linear-gradient(135deg,#ffd9e8,#cdbbff 52%,#8fb9ff);--ink-on-art:#fffaff;}
+  .c-friday{background:radial-gradient(circle at 70% 18%,rgba(255,255,255,.4),transparent 36%),linear-gradient(145deg,#ffe29a,#ffab73 52%,#e85c53);--ink-on-art:#fff9ea;}
+  .c-foxrain{background:repeating-linear-gradient(112deg,rgba(255,255,255,.085) 0 1px,transparent 1px 9px),linear-gradient(160deg,#0b233b,#1d506c 58%,#3c8a92);--ink-on-art:#eafcff;}
+  .c-you-kaze{background:radial-gradient(circle at 72% 24%,rgba(255,255,255,.55),transparent 24%),linear-gradient(160deg,#c9e8ff,#e9f7ff 55%,#ffd7c2);--ink-on-art:#42617a;text-shadow:none;}
+  .c-nop{background:radial-gradient(circle at 24% 28%,rgba(150,190,255,.55) 0 1px,transparent 1.6px),radial-gradient(circle at 70% 64%,rgba(255,255,255,.5) 0 1px,transparent 1.6px),radial-gradient(circle at 48% 16%,rgba(130,180,255,.45) 0 1px,transparent 1.6px),linear-gradient(150deg,#0c1018,#1a2938 55%,#0a0d12);--ink-on-art:#bcd1e8;}
+  .c-love{background:radial-gradient(circle at 76% 26%,rgba(255,214,170,.35),transparent 34%),linear-gradient(150deg,#241b2d,#6f2d3f 55%,#d16b4d);--ink-on-art:#ffdcb9;}
+  .c-you-vietra{background:linear-gradient(145deg,#e3d9ee,#b8a9cf 52%,#8a7ca7);--ink-on-art:#fffaff;}
+  .c-iloveyou{background:radial-gradient(circle at 30% 24%,rgba(120,210,190,.26),transparent 48%),linear-gradient(150deg,#0b191b,#16383a 55%,#2e5a53);--ink-on-art:#d8efe8;}
+  .c-mylove{background:radial-gradient(circle at 28% 20%,rgba(255,210,225,.3),transparent 40%),linear-gradient(155deg,#3a0f1e,#8b2446 55%,#d66c8c);--ink-on-art:#ffe1e8;}
+  .c-greenblue{background:radial-gradient(circle at 72% 24%,rgba(220,255,240,.3),transparent 42%),linear-gradient(150deg,#2d6b4e,#4f8f86 45%,#2d5f8c);--ink-on-art:#e8fff5;}
+  .c-foxrain>i{font-family:"Songti SC","STSong","Noto Serif SC",serif;font-size:calc(var(--gs,15px) + 1px);}
+  .c-you-vietra>i{font-style:italic;}
+  .c-plottwist>i,.c-iloveyou>i{font-size:calc(var(--gs,15px) + 2px);}
+  .c-nop>i{font-family:"SF Mono",Menlo,monospace;font-size:calc(var(--gs,15px) - 2px);letter-spacing:.06em;}
+
+  /* 当前歌曲封面上的小型均衡器 */
+  .eq{
+    position:absolute;
+    left:3px;
+    bottom:3px;
+    z-index:2;
+    height:13px;
+    padding:2px 3px;
+    border-radius:4px;
+    background:rgba(0,0,0,.58);
+    display:none;
+    align-items:flex-end;
+    gap:1.5px;
+    -webkit-backdrop-filter:blur(4px);
+    backdrop-filter:blur(4px);
+  }
+  .song.current .eq{display:flex;}
+  .eq b{
+    width:2px;
+    border-radius:1px;
+    background:#fff;
+    transform-origin:bottom;
+    animation:eqBar .92s ease-in-out infinite;
+  }
+  .eq b:nth-child(1){height:4px;animation-delay:-.2s;}
+  .eq b:nth-child(2){height:8px;animation-delay:-.52s;}
+  .eq b:nth-child(3){height:5px;animation-delay:-.34s;}
+  .song:not(.playing) .eq b{animation-play-state:paused;}
+  @keyframes eqBar{
+    0%,100%{transform:scaleY(.46);}
+    50%{transform:scaleY(1);}
+  }
+
+  /* ===== 底部 Mini 播放器 ===== */
+  .mini{
+    position:absolute;
+    left:12px;
+    right:12px;
+    bottom:24px;
+    z-index:40;
+    height:64px;
+    padding:0 9px 0 10px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    border-radius:20px;
+    background:rgba(255,255,255,.8);
+    border:.5px solid rgba(255,255,255,.72);
+    -webkit-backdrop-filter:blur(24px) saturate(180%);
+    backdrop-filter:blur(24px) saturate(180%);
+    box-shadow:
+      0 20px 46px rgba(0,0,0,.22),
+      0 4px 12px rgba(0,0,0,.1),
+      inset 0 1px 0 rgba(255,255,255,.55);
+  }
+  .mini::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    border-radius:inherit;
+    pointer-events:none;
+    background:linear-gradient(180deg,rgba(255,255,255,.38),rgba(255,255,255,0) 58%);
+  }
+  .am-icon{
+    width:30px;
+    height:30px;
+    flex:none;
+    border-radius:8px;
+    box-shadow:0 2px 7px rgba(250,35,59,.22);
+    position:relative;
+    z-index:1;
+  }
+  .mini-art{
+    width:42px;
+    height:42px;
+    flex:none;
+    border-radius:8px;
+    overflow:hidden;
+    position:relative;
+    z-index:1;
+  }
+  .mini-art .cover{width:100%;height:100%;border-radius:8px;--gs:16px;}
+  .mini-meta{
+    flex:1;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:1px;
+    position:relative;
+    z-index:1;
+  }
+  .mini-title{
+    font-size:14px;
+    font-weight:600;
+    line-height:1.2;
+    letter-spacing:-.18px;
+    color:#000;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .mini-artist{
+    font-size:12px;
+    line-height:1.2;
+    letter-spacing:-.05px;
+    color:var(--grey);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .mini-btn{
+    width:34px;
+    height:38px;
+    flex:none;
+    border-radius:11px;
+    display:grid;
+    place-items:center;
+    color:#111;
+    position:relative;
+    z-index:1;
+    transition:background .15s,transform .13s var(--ease);
+  }
+  .mini-btn:active{background:rgba(118,118,128,.13);transform:scale(.92);}
+  .mini-btn.play svg{width:19px;height:19px;}
+  .mini-btn.search svg{width:18px;height:18px;}
+  .mini-btn .i-pause{display:none;}
+  #phone.is-playing .mini-btn.play .i-play{display:none;}
+  #phone.is-playing .mini-btn.play .i-pause{display:block;}
+
+  .home-indicator{
+    position:absolute;
+    left:50%;
+    bottom:8px;
+    z-index:45;
+    width:134px;
+    height:5px;
+    border-radius:3px;
+    background:#000;
+    transform:translateX(-50%);
+    pointer-events:none;
+  }
+
+  /* 封面切换时的小动画 */
+  .swap{animation:artIn .34s var(--ease);}
+  @keyframes artIn{
+    from{opacity:.35;transform:scale(.86);}
+    to{opacity:1;transform:scale(1);}
+  }
+
+  @media (hover:hover){
+    .song-main:hover{background:rgba(118,118,128,.06);}
+    .more:hover,.icon-btn:hover{background:rgba(118,118,128,.08);}
+    .mini-btn:hover{background:rgba(118,118,128,.08);}
+  }
+  button:focus-visible{outline:2px solid rgba(0,122,255,.72);outline-offset:2px;}
+
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .chrome{background:rgba(255,255,255,.96);}
+    .mini{background:rgba(255,255,255,.97);}
+  }
+
+  @media (max-width:520px){
+    body{display:block;background:#fff;}
+    #phone{
+      width:100vw;
+      height:100vh;
+      height:100dvh;
+      border-radius:0;
+      box-shadow:none;
+      transform:none;
+    }
+  }
+  @media (max-width:380px){
+    .status{padding-right:16px;}
+    .sb-right{gap:4px;}
+  }
+  @media (max-width:350px){
+    .status{padding-left:24px;}
+    .island{width:108px;height:34px;}
+    .sb-right .pct{display:none;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important;}
+  }
+</style>
+</head>
+<body>
+  <main id="phone" aria-label="Apple Music 播放列表">
+    <div id="ambient" aria-hidden="true"></div>
+
+    <header class="chrome">
+      <div class="status" aria-hidden="true">
+        <span class="sb-time">10:55</span>
+        <span class="sb-right">
+          <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+          <span class="five-g">5G</span>
+          <span class="battery">
+            <span class="pct">37%</span>
+            <svg viewBox="0 0 27 13" aria-hidden="true">
+              <rect x=".5" y=".5" width="23" height="12" rx="3.8" fill="none" stroke="currentColor" opacity=".38"/>
+              <rect x="2" y="2" width="7.4" height="9" rx="2.2" fill="currentColor"/>
+              <path d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2Z" opacity=".38" fill="currentColor"/>
+            </svg>
+          </span>
+        </span>
+      </div>
+
+      <nav class="nav" aria-label="播放列表控制栏">
+        <div class="nav-side">
+          <button class="icon-btn back" type="button" aria-label="返回" title="返回">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5"/></svg>
+          </button>
+          <button class="icon-btn shuffle" id="shuffleBtn" type="button" aria-label="随机播放" aria-pressed="false" title="随机播放">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 7h2.8c1.5 0 2.9.8 3.7 2.1l5 8c.8 1.3 2.2 2.1 3.7 2.1H21"/>
+              <path d="m18 16 3 3-3 3"/>
+              <path d="M3 17h2.8c1.5 0 2.9-.8 3.7-2.1l5-8C15.3 5.6 16.7 4.8 18.2 4.8H21"/>
+              <path d="m18 1.8 3 3-3 3"/>
+            </svg>
+          </button>
+        </div>
+
+        <button class="nav-play" id="navPlay" type="button" aria-label="播放" aria-pressed="false">
+          <svg class="i-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.4v13.2L19 12z"/></svg>
+          <svg class="i-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6.8" y="5" width="3.7" height="14" rx="1.3"/><rect x="13.5" y="5" width="3.7" height="14" rx="1.3"/></svg>
+          <span id="navPlayText">播放</span>
+        </button>
+
+        <div class="nav-side right">
+          <button class="icon-btn" type="button" aria-label="分享" title="分享">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 15V3"/><path d="m8 7 4-4 4 4"/>
+              <path d="M6 11H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2h-1"/>
+            </svg>
+          </button>
+          <button class="icon-btn more" type="button" aria-label="更多" title="更多">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+          </button>
+        </div>
+      </nav>
+    </header>
+
+    <div class="island" aria-hidden="true">
+      <span class="island-art" id="islandCover"></span>
+      <span class="island-eq"><b></b><b></b><b></b></span>
+    </div>
+
+    <section class="content" id="content" aria-label="歌曲列表">
+      <ol class="songs" id="songList"></ol>
+    </section>
+
+    <div class="mini" role="region" aria-label="正在播放">
+      <svg class="am-icon" viewBox="0 0 60 60" aria-hidden="true">
+        <defs>
+          <linearGradient id="amGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#fb5c74"/>
+            <stop offset="1" stop-color="#fa233b"/>
+          </linearGradient>
+        </defs>
+        <rect width="60" height="60" rx="14" fill="url(#amGrad)"/>
+        <g fill="#fff"><circle cx="23" cy="46" r="6"/><circle cx="43" cy="40" r="6"/></g>
+        <path d="M29 46V18l20-4.5V40" stroke="#fff" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+
+      <span class="mini-art" id="miniCover"></span>
+
+      <span class="mini-meta">
+        <span class="mini-title" id="miniTitle"></span>
+        <span class="mini-artist" id="miniArtist"></span>
+      </span>
+
+      <button class="mini-btn play" id="miniPlay" type="button" aria-label="播放" aria-pressed="false">
+        <svg class="i-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.4v13.2L19 12z"/></svg>
+        <svg class="i-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6.8" y="5" width="3.7" height="14" rx="1.3"/><rect x="13.5" y="5" width="3.7" height="14" rx="1.3"/></svg>
+      </button>
+
+      <button class="mini-btn search" type="button" aria-label="搜索" title="搜索">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-4.3-4.3"/></svg>
+      </button>
+    </div>
+
+    <div class="home-indicator" aria-hidden="true"></div>
+    <div class="sr-only" id="live" aria-live="polite"></div>
+  </main>
+
+<script>
+(function(){
+  "use strict";
+
+  var songs = [
+    { title:"recently", artist:"Liana Flores", cover:"c-recently", glyph:"r", tint:["#c6d9b8","#8dab84"] },
+    { title:"Phonecert", artist:"10CM", cover:"c-phonecert", glyph:"10", tint:["#e8a87c","#b86b4b"] },
+    { title:"plot twist", artist:"TWS", cover:"c-plottwist", glyph:"✦", tint:["#cdbbff","#8fb9ff"] },
+    { title:"Friday (feat. Jang Yi-jeong)", artist:"IU", cover:"c-friday", glyph:"fri", tint:["#ffab73","#e85c53"] },
+    { title:"Fox Rain", artist:"Lee Sun Hee", cover:"c-foxrain", glyph:"雨", tint:["#1d506c","#3c8a92"] },
+    { title:"You", artist:"Fujii Kaze", cover:"c-you-kaze", glyph:"you", tint:["#bfe4ff","#ffd7c2"] },
+    { title:"nop", artist:"ChenYueLong", cover:"c-nop", glyph:"nop", tint:["#1a2938","#0a0d12"] },
+    { title:"The Love Of Foreigner", artist:"AKMU", cover:"c-love", glyph:"L", tint:["#6f2d3f","#d16b4d"] },
+    { title:"You", artist:"Vietra", cover:"c-you-vietra", glyph:"you", tint:["#b8a9cf","#8a7ca7"] },
+    { title:"i love you", artist:"Billie Eilish", cover:"c-iloveyou", glyph:"♡", tint:["#16383a","#2e5a53"] },
+    { title:"My Love Mine All Mine", artist:"Mitski", cover:"c-mylove", glyph:"m", tint:["#8b2446","#d66c8c"] },
+    { title:"green to blue (slowed + reverbed)", artist:"daniel.mp3", cover:"c-greenblue", glyph:"≋", tint:["#4f8f86","#2d5f8c"] }
+  ];
+
+  var phone = document.getElementById("phone");
+  var listEl = document.getElementById("songList");
+  var islandCover = document.getElementById("islandCover");
+  var miniCover = document.getElementById("miniCover");
+  var miniTitle = document.getElementById("miniTitle");
+  var miniArtist = document.getElementById("miniArtist");
+  var miniPlay = document.getElementById("miniPlay");
+  var navPlay = document.getElementById("navPlay");
+  var navPlayText = document.getElementById("navPlayText");
+  var shuffleBtn = document.getElementById("shuffleBtn");
+  var live = document.getElementById("live");
+
+  var current = 7;          // The Love Of Foreigner — AKMU
+  var isPlaying = false;
+  var shuffleOn = false;
+
+  function coverHTML(song){
+    return '<span class="cover ' + song.cover + '" aria-hidden="true"><i>' + song.glyph + '</i></span>';
+  }
+
+  function songHTML(song, i){
+    return '<li class="song' + (i === current ? " current" : "") + '" data-index="' + i + '">' +
+      '<button class="song-main" type="button" data-play="' + i + '" aria-label="播放 ' + song.title + '，' + song.artist + '">' +
+        '<span class="cover ' + song.cover + '" aria-hidden="true">' +
+          '<i>' + song.glyph + '</i>' +
+          '<span class="eq" aria-hidden="true"><b></b><b></b><b></b></span>' +
+        '</span>' +
+        '<span class="meta">' +
+          '<span class="title">' + song.title + '</span>' +
+          '<span class="artist">' + song.artist + '</span>' +
+        '</span>' +
+      '</button>' +
+      '<button class="more" type="button" aria-label="更多操作：' + song.title + '">' +
+        '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>' +
+      '</button>' +
+    '</li>';
+  }
+
+  function renderList(){
+    listEl.innerHTML = songs.map(songHTML).join("");
+  }
+
+  function syncList(){
+    var rows = listEl.querySelectorAll(".song");
+    for (var i = 0; i < rows.length; i += 1){
+      rows[i].classList.toggle("current", i === current);
+      rows[i].classList.toggle("playing", i === current && isPlaying);
+      var main = rows[i].querySelector(".song-main");
+      if (i === current) main.setAttribute("aria-current", "true");
+      else main.removeAttribute("aria-current");
+    }
+  }
+
+  function animateCover(el){
+    el.classList.remove("swap");
+    void el.offsetWidth;
+    el.classList.add("swap");
+  }
+
+  function updateUI(animate){
+    var song = songs[current];
+    var changed = Boolean(animate);
+
+    phone.classList.toggle("is-playing", isPlaying);
+
+    miniTitle.textContent = song.title;
+    miniArtist.textContent = song.artist;
+
+    if (changed){
+      miniCover.innerHTML = coverHTML(song);
+      islandCover.innerHTML = coverHTML(song);
+      animateCover(miniCover);
+      animateCover(islandCover);
+    }
+
+    phone.style.setProperty("--tint-a", song.tint[0]);
+    phone.style.setProperty("--tint-b", song.tint[1]);
+
+    var label = isPlaying ? "暂停" : "播放";
+    navPlayText.textContent = label;
+    navPlay.setAttribute("aria-label", label);
+    navPlay.setAttribute("aria-pressed", String(isPlaying));
+    miniPlay.setAttribute("aria-label", label);
+    miniPlay.setAttribute("aria-pressed", String(isPlaying));
+
+    syncList();
+    live.textContent = (isPlaying ? "正在播放：" : "已暂停：") + song.title + "，" + song.artist;
+  }
+
+  function selectSong(index, play){
+    var changed = index !== current;
+    current = index;
+    isPlaying = play;
+    updateUI(changed);
+  }
+
+  renderList();
+
+  // 初始状态：停在第八首，暂停
+  miniCover.innerHTML = coverHTML(songs[current]);
+  islandCover.innerHTML = coverHTML(songs[current]);
+  updateUI(false);
+
+  listEl.addEventListener("click", function(e){
+    var more = e.target.closest(".more");
+    if (more) return;
+    var btn = e.target.closest(".song-main");
+    if (!btn) return;
+    selectSong(Number(btn.dataset.play), true);
+  });
+
+  miniPlay.addEventListener("click", function(){
+    isPlaying = !isPlaying;
+    updateUI(false);
+  });
+
+  navPlay.addEventListener("click", function(){
+    isPlaying = !isPlaying;
+    updateUI(false);
+  });
+
+  shuffleBtn.addEventListener("click", function(){
+    shuffleOn = !shuffleOn;
+    shuffleBtn.classList.toggle("on", shuffleOn);
+    shuffleBtn.setAttribute("aria-pressed", String(shuffleOn));
+  });
+
+  function fitPhone(){
+    if (window.matchMedia("(max-width: 520px)").matches) return;
+    var s = Math.min((window.innerHeight - 56) / 852, (window.innerWidth - 56) / 393, 1);
+    document.documentElement.style.setProperty("--scale", String(Math.max(.3, s)));
+  }
+  window.addEventListener("resize", fitPhone);
+  window.addEventListener("orientationchange", fitPhone);
+  fitPhone();
+})();
+</script>
+</body>
+</html>

@@ -2,6 +2,8 @@
 
 这是一个无需后端的静态互动网页。直接双击 `index.html`，或运行 `python3 server.py` 后访问 http://127.0.0.1:8769 预览。
 
+在线预览：<https://kyuatl-source.github.io/jihun-phone/>
+
 ## 编辑剧情
 
 日后主要编辑 [content.js](content.js)：

@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>捡到志薰的手机</title>
-    <link rel="stylesheet" href="style.css?v=29" />
+    <link rel="stylesheet" href="style.css?v=36" />
   </head>
   <body>
     <div id="phone">
@@ -88,19 +88,10 @@
         <section id="nameL" class="screen" aria-label="输入昵称">
           <div class="nm-card">
             <h2 class="nm-title">你的名字是</h2>
+            <p class="nm-hint" id="nmHint" hidden></p>
             <input id="nmInput" class="nm-input" type="text" maxlength="12" placeholder="输入昵称" autocomplete="off" spellcheck="false" />
             <button id="nmOk" class="nm-btn" type="button" disabled>继续</button>
             <button id="nmSkip" class="nm-skip" type="button">先跳过</button>
-          </div>
-        </section>
-
-        <!-- 视图 3.5：选择不打开 -->
-        <section id="noL" class="screen" aria-label="不打开">
-          <div class="no-wrap">
-            <span class="no-kicker" id="noKicker">不打开</span>
-            <h2 class="no-title" id="noTitle">故事先停在这里。</h2>
-            <p class="no-sub" id="noSub">这一部分的内容待补充。</p>
-            <button class="no-back" id="noBack" type="button">重新选择</button>
           </div>
         </section>
 
@@ -146,6 +137,7 @@
 
       <div id="island"><span class="ia" id="islandArt" aria-hidden="true"></span><span class="ib"><i></i><i></i><i></i><i></i></span></div>
       <div id="hb" aria-label="回到主屏幕"><i></i></div>
+      <audio id="lkAudio" preload="metadata"></audio>
 
       <!-- 结局转场：黑场旁白 -->
       <div id="endVeil" class="end-veil" aria-hidden="true"><div class="end-veil-in" id="endVeilIn"></div></div>
@@ -158,6 +150,47 @@
           <div class="end-coda-body" id="endCodaBody"></div>
           <div class="end-coda-quote" id="endCodaQuote"></div>
           <button class="end-coda-close" type="button" data-coda-close>合上</button>
+        </div>
+      </div>
+
+      <!-- 不打开线：最后那通电话 -->
+      <div id="callL" class="call-l" aria-hidden="true">
+        <div class="call-kind" id="callKind">KakaoTalk 语音通话</div>
+        <div class="call-av" id="callAvatar"></div>
+        <div class="call-name" id="callName">志薰</div>
+        <div class="call-sub" id="callSub">邀请你进行语音通话</div>
+        <div class="call-timer" id="callTimer" hidden>00:00</div>
+        <div class="call-caption" id="callCaption"></div>
+        <div class="call-actions" id="callIncoming">
+          <button class="call-btn decline" id="callDecline" type="button" aria-label="拒绝">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span>拒绝</span>
+          </button>
+          <button class="call-btn answer" id="callAnswer" type="button" aria-label="接听">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span>接听</span>
+          </button>
+        </div>
+        <div class="call-actions" id="callActive" hidden>
+          <button class="call-btn hangup" id="callHangup" type="button" aria-label="挂断">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span>挂断</span>
+          </button>
+        </div>
+        <audio id="callAudio" preload="auto"></audio>
+      </div>
+
+      <!-- 结局卡：日记合上之后 -->
+      <div id="endCard" class="end-card" aria-hidden="true">
+        <div class="end-card-in" role="dialog" aria-modal="true" aria-label="结局">
+          <span class="end-card-kicker" id="endCardKicker">END</span>
+          <h2 class="end-card-title" id="endCardTitle"></h2>
+          <p class="end-card-meta" id="endCardMeta"></p>
+          <p class="end-card-line" id="endCardLine"></p>
+          <div class="end-card-actions">
+            <button class="end-card-restart" id="endRestart" type="button">再看一次</button>
+            <button class="end-card-stay" id="endStay" type="button">回到手机</button>
+          </div>
         </div>
       </div>
 
@@ -195,8 +228,8 @@
       </div>
     </div>
 
-    <script src="content.js?v=34"></script>
+    <script src="content.js?v=45"></script>
     <script src="advisor.js?v=1"></script>
-    <script src="app.js?v=33"></script>
+    <script src="app.js?v=43"></script>
   </body>
 </html>

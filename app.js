@@ -1,15 +1,19 @@
 const $ = (selector) => document.querySelector(selector);
-const introL = $("#introL"), noL = $("#noL"), lockL = $("#lockL"), passL = $("#passL"), nameL = $("#nameL"), homeL = $("#homeL"), appL = $("#appL"), wall = $("#wall"), sb = $("#sb"), island = $("#island"), islandArt = $("#islandArt"), hb = $("#hb");
+const introL = $("#introL"), lockL = $("#lockL"), passL = $("#passL"), nameL = $("#nameL"), homeL = $("#homeL"), appL = $("#appL"), wall = $("#wall"), sb = $("#sb"), island = $("#island"), islandArt = $("#islandArt"), hb = $("#hb");
 const nmInput = $("#nmInput"), nmOk = $("#nmOk");
 
 let currentApp = null;      // 当前打开的 App id
 let appStack = [];          // 页面栈 [{ title, back, large, cls, body, extra, full }]
 let playingSong = -1;       // 正在播放的歌曲下标
+let playerPlaying = false;  // 锁屏 / 桌面小组件里的播放器是否正在放（只有写了 audio 的手机才会真的出声）
 
 // 当前屏幕上的那台手机：开头是志薰的，结局会切到她自己的
 let PHONE = phoneData;
 let storyPhase = "his";     // his | her
+let storyRoute = "open";    // open（翻开他的手机）| noOpen（不打开，直接去她的手机）
 let endingKey = null;       // christmasEve | christmas | newYear
+let introChoice = "open";   // 开屏点了哪个按钮，决定昵称页之后去哪
+let noOpenPlan = null;      // 这一次随机抽中的不打开剧情
 let endingSent = false;     // 她是否已经按下发送
 let storyToken = 0;         // 换页面后让还没跑完的延迟消息失效
 
@@ -44,15 +48,15 @@ function appIcon(app) {
 
 /* ===== 屏幕切换 ===== */
 function showScreen(name) {
-  [introL, noL, lockL, passL, nameL, homeL, appL].forEach((el) => el.classList.remove("active"));
-  ({ intro: introL, no: noL, lock: lockL, pass: passL, name: nameL, home: homeL, app: appL })[name].classList.add("active");
+  [introL, lockL, passL, nameL, homeL, appL].forEach((el) => el.classList.remove("active"));
+  ({ intro: introL, lock: lockL, pass: passL, name: nameL, home: homeL, app: appL })[name].classList.add("active");
   sb.classList.toggle("light", name !== "app");
   sb.classList.toggle("lockmode", name === "lock");
   hb.classList.toggle("light", name !== "app");
 }
 
 /* ===== 主屏渲染 ===== */
-const IMPLEMENTED_APPS = new Set(["notes", "calendar", "kakaotalk", "applemusic", "temu", "chatgpt", "photos"]);
+const IMPLEMENTED_APPS = new Set(["notes", "calendar", "kakaotalk", "applemusic", "temu", "chatgpt", "photos", "daysmatter"]);
 
 function widgetCalendarHtml() {
   const l = PHONE.lockScreen || {};
@@ -70,9 +74,10 @@ function widgetCalendarHtml() {
 }
 function widgetMusicHtml() {
   const p = (PHONE.lockScreen && PHONE.lockScreen.player) || {};
+  const playing = !!p.audio && playerPlaying;
   return `<span class="cov"></span>
     <span class="wm-info"><span class="wm-t">${escapeHtml(p.title)}</span><span class="wm-a">${escapeHtml(p.artist)}</span></span>
-    <button class="wm-play" data-home-play aria-label="播放">${iconPlay}</button>`;
+    <button class="wm-play${playing ? "" : " paused"}" data-home-play aria-label="${playing ? "暂停" : "播放"}">${playing ? iconPause : iconPlay}</button>`;
 }
 function renderHome() {
   const l = PHONE.lockScreen || {};
@@ -97,17 +102,19 @@ function renderHome() {
   $("#sbBat").setAttribute("width", (23 * battery / 100).toFixed(1));
   // 她的锁屏没有正在播放的歌，就把音乐挂件收起来
   $("#lkPlayer").style.display = p ? "" : "none";
+  // 写了 audio 的播放器按真实状态显示；没有音频的沿用原来「正在播放」的样子
+  const playing = p && p.audio ? playerPlaying : true;
   $("#lkPlayer").innerHTML = p ? `
     <div class="lp-head">
       <span class="cov"></span>
       <span class="lp-tx"><b>${escapeHtml(p.title)}</b><small>${escapeHtml(p.artist)}</small></span>
-      <span class="lp-eq"><i></i><i></i><i></i></span>
+      <span class="lp-eq${playing ? "" : " paused"}"><i></i><i></i><i></i></span>
     </div>
     <div class="lp-bar"><i style="width:${Math.max(1, Math.min(100, Number(p.progress) || 2))}%"></i></div>
     <div class="lp-times"><span>${escapeHtml(p.elapsed)}</span><span>${escapeHtml(p.remaining)}</span></div>
     <div class="lp-ctrl">
       <button class="lp-b" data-lp="prev" aria-label="上一首"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2.2v14H6zM20 5v14L9.2 12z"/></svg></button>
-      <button class="lp-b play" data-lp="play" aria-label="播放/暂停">${iconPause}</button>
+      <button class="lp-b play${playing ? "" : " paused"}" data-lp="play" aria-label="${playing ? "暂停" : "播放"}">${playing ? iconPause : iconPlay}</button>
       <button class="lp-b" data-lp="next" aria-label="下一首"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.8 5H18v14h-2.2zM4 5v14l10.8-7z"/></svg></button>
     </div>` : "";
   renderNotif();
@@ -120,10 +127,84 @@ function renderNotif() {
   const n = (PHONE.lockScreen || {}).notification;
   el.innerHTML = n ? `<div class="lk-nf">
       <span class="lk-nf-ic">${appIcon({ id: "kakaotalk" })}</span>
-      <span class="lk-nf-tx"><b>${escapeHtml(n.app || "")}</b><span>${escapeHtml(n.title || "")}</span><p>${escapeHtml(n.text || "")}</p></span>
+      <span class="lk-nf-tx"><b>${escapeHtml(n.app || "")}</b><span>${escapeHtml(withNick(n.title || ""))}</span><p>${escapeHtml(withNick(n.text || ""))}</p></span>
       <span class="lk-nf-t">${escapeHtml(n.time || "")}</span>
     </div>` : "";
   el.hidden = !n;
+}
+
+/* ===== 锁屏 / 桌面小组件里的播放器 ===== */
+const playerData = () => (PHONE.lockScreen || {}).player || null;
+const playerAudioEl = () => $("#lkAudio");
+
+function fmtPlayerTime(sec) {
+  const s = Math.max(0, Math.floor(Number(sec) || 0));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+// 播放 / 暂停时，锁屏播放器和桌面小组件上的按钮一起变
+function setPlayerUi() {
+  const lp = $("#lkPlayer .lp-b.play");
+  if (lp) {
+    lp.classList.toggle("paused", !playerPlaying);
+    lp.innerHTML = playerPlaying ? iconPause : iconPlay;
+    lp.setAttribute("aria-label", playerPlaying ? "暂停" : "播放");
+  }
+  const eq = $("#lkPlayer .lp-eq");
+  if (eq) eq.classList.toggle("paused", !playerPlaying);
+  const wm = $("#wMusic .wm-play");
+  if (wm) {
+    wm.classList.toggle("paused", !playerPlaying);
+    wm.innerHTML = playerPlaying ? iconPause : iconPlay;
+    wm.setAttribute("aria-label", playerPlaying ? "暂停" : "播放");
+  }
+}
+
+// 进度条和时间跟着音频走
+function renderPlayerTimes() {
+  const a = playerAudioEl();
+  const bar = $("#lkPlayer .lp-bar i");
+  const times = $("#lkPlayer .lp-times");
+  if (!a || !bar || !times) return;
+  const total = Number.isFinite(a.duration) && a.duration > 0 ? a.duration : 0;
+  if (!total) return;
+  const cur = Math.min(a.currentTime || 0, total);
+  bar.style.width = `${Math.max(1, Math.min(100, (cur / total) * 100))}%`;
+  times.innerHTML = `<span>${fmtPlayerTime(cur)}</span><span>-${fmtPlayerTime(total - cur)}</span>`;
+}
+
+// 换到另一台手机时，把播放器里的音频换成那一台的
+function loadPlayerAudio() {
+  const p = playerData();
+  const a = playerAudioEl();
+  if (!a) return;
+  a.pause();
+  try { a.currentTime = 0; } catch (e) { /* 还没加载时忽略 */ }
+  playerPlaying = false;
+  if (p && p.audio) {
+    a.src = p.audio;
+    a.load();
+  } else {
+    a.removeAttribute("src");
+  }
+  setPlayerUi();
+}
+
+// 播放键：有音频就真的放，没有音频的装饰播放器只切换图标
+function handlePlayerButton(btn) {
+  const p = playerData();
+  if (p && p.audio) {
+    const a = playerAudioEl();
+    if (!a) return;
+    if (a.paused) {
+      const played = a.play();
+      if (played && played.catch) played.catch(() => { /* 被浏览器拦下时保持暂停图标 */ });
+    } else {
+      a.pause();
+    }
+    return;
+  }
+  if (btn) btn.innerHTML = btn.classList.toggle("paused") ? iconPlay : iconPause;
 }
 
 /* ===== 页面导航 ===== */
@@ -213,6 +294,7 @@ function exitApp() {
 }
 function openApp(appId) {
   currentApp = appId; playingSong = -1;
+  if (appId === "temu") temuTab = "order";
   document.body.classList.toggle("kt-open", appId === "kakaotalk");
   document.body.classList.toggle("cg-open", appId === "chatgpt");
   document.body.classList.toggle("am-open", appId === "applemusic");
@@ -222,7 +304,7 @@ function openApp(appId) {
     if (islandArt) islandArt.innerHTML = "";
   }
   wall.classList.add("dim");
-  const pages = { notes: notesPage, calendar: calendarPage, kakaotalk: kakaotalkPage, applemusic: applemusicPage, temu: temuPage, chatgpt: chatgptPage, photos: photosPage };
+  const pages = { notes: notesPage, calendar: calendarPage, kakaotalk: kakaotalkPage, applemusic: applemusicPage, temu: temuPage, chatgpt: chatgptPage, photos: photosPage, daysmatter: daysmatterPage };
   appStack = [pages[appId]()];
   appL.innerHTML = ""; topPageEl = null;
   renderTop("fwd");
@@ -275,8 +357,9 @@ function notesInFolder(category) {
   return allNotesSorted().filter(({ note }) => note.category === category);
 }
 
-/* --- 视图一：文件夹 --- */
+/* --- 视图一：文件夹（notesFlat 的手机没有这一层，直接进列表） --- */
 function notesPage() {
+  if (PHONE.notesFlat) return notesListPage("all");
   const total = PHONE.notes.length;
   const quickCount = PHONE.notes.filter((n) => n.quick).length;
   const sharedCount = PHONE.notes.filter((n) => n.shared).length;
@@ -311,6 +394,7 @@ function notesPage() {
 
 /* --- 视图二：备忘录列表 --- */
 function notesListPage(folder) {
+  const flat = !!PHONE.notesFlat;
   let list, label;
   if (folder === "all") { list = allNotesSorted(); label = NOTES_ALL; }
   else if (folder === "quick") { list = allNotesSorted().filter(({ note }) => note.quick); label = "快速备忘录"; }
@@ -330,7 +414,7 @@ function notesListPage(folder) {
   const card = ({ note, index }) => `<button class="nrow" data-note="${index}" data-cat="${escapeHtml(note.category || "")}">
       <div class="nrow-main">
         <div class="nrow-t">${escapeHtml(noteTitle(note))}</div>
-        <div class="nrow-m"><span>${noteDateFull(note.date)}</span><span class="nrow-f">${escapeHtml(note.category || label)}</span></div>
+        <div class="nrow-m"><span>${noteDateFull(note.date)}</span>${flat ? "" : `<span class="nrow-f">${escapeHtml(note.category || label)}</span>`}</div>
         <div class="nrow-p">${escapeHtml(notePreview(note))}</div>
       </div>
       ${note.image ? `<span class="nrow-thumb"><img src="${escapeHtml(note.image)}" alt="" /></span>` : ""}
@@ -340,6 +424,11 @@ function notesListPage(folder) {
     ? groups.map((g) => `<div class="ndh">${g.label}</div><div class="nlist">${g.items.map(card).join("")}</div>`).join("")
     : `<div class="empty">暂无备忘录</div>`;
 
+  if (flat) return {
+    title: "备忘录", back: "主屏幕", large: "备忘录",
+    cls: "grouped notes-pg notes-list-pg", body,
+    right: `<button class="nb-act" data-edit>编辑</button><button class="nb-ic" aria-label="新建备忘录">${composeIcon}</button>`
+  };
   return {
     title: label, back: "文件夹", center: `${escapeHtml(label)}<span class="cnt">${list.length}</span>`, centerAlways: true,
     cls: "grouped notes-pg notes-list-pg", body,
@@ -526,6 +615,45 @@ function calendarPage() {
   };
 }
 
+/* ===== Days Matter ===== */
+const dmDaysBetween = (from, to) =>
+  Math.round((Date.UTC(to.y, to.m - 1, to.d) - Date.UTC(from.y, from.m - 1, from.d)) / 86400000);
+
+function daysmatterPage() {
+  const today = calToday();
+  const items = (PHONE.daysmatter || [])
+    .map((item) => {
+      const d = calParseDate(item.date);
+      if (!d) return null;
+      const until = item.kind !== "since";
+      const diff = dmDaysBetween(today, d);
+      // 已经过去的倒数日不再显示，纪念日则一直累计
+      if (until && diff < 0) return null;
+      return { item, d, until, diff, num: Math.abs(diff) };
+    })
+    .filter(Boolean)
+    .sort((a, b) => (a.until === b.until)
+      ? (a.until ? a.num - b.num : b.num - a.num)
+      : (a.until ? -1 : 1));
+
+  const card = (e) => `<article class="dm-card${e.item._meet ? " meet" : ""}">
+      <div class="dm-days"><b>${e.num}</b><span>${e.diff === 0 ? "今天" : e.until ? "天后" : "天前"}</span></div>
+      <div class="dm-info">
+        <b>${escapeHtml(withNick(e.item.title))}</b>
+        <span>${e.d.y}年${e.d.m}月${e.d.d}日${e.item.note ? " · " + escapeHtml(e.item.note) : ""}</span>
+      </div>
+    </article>`;
+
+  const body = items.length
+    ? `<div class="dm-list">${items.map(card).join("")}</div>`
+    : `<div class="empty">还没有日子</div>`;
+  return {
+    title: "Days Matter", back: "主屏幕", large: "Days Matter", cls: "grouped dm-pg",
+    right: '<button type="button" class="nb-act" data-dm-add>+</button>',
+    body
+  };
+}
+
 /* ===== KakaoTalk ===== */
 let ktCurrentChatId = null;
 let heroineName = "";   // 输入密码后填的昵称，用来替换数据里所有的 ㅇㅇ
@@ -631,7 +759,7 @@ function ktListHtml() {
       ${ktAvatarHtml(chat)}
       <span class="kt-main">
         <span class="kt-name">${chat.pinned ? ktPinSvg() : ""}<span class="kt-name-tx">${escapeHtml(withNick(chat.name))}</span></span>
-        <span class="kt-prev">${escapeHtml(chat.preview || "")}</span>
+        <span class="kt-prev">${escapeHtml(withNick(chat.preview || ""))}</span>
       </span>
       <span class="kt-side">
         <span class="kt-date">${escapeHtml(chat.date || "")}</span>
@@ -665,7 +793,24 @@ function ktListHtml() {
 function ktChatHtml(id) {
   const chat = ktChatById(id);
   if (!chat) return `<div class="pg kt-pg kt-chat-pg"></div>`;
+  // 不打开分支里，和志薰的对话也保留输入栏：他发完话之后点一下输入栏，
+  // 才会展开这一步可以回的选项（选项栏从底部弹出来，替掉输入栏）
+  const choiceMode = storyRoute === "noOpen" && id === "jihun";
   const msgs = chat.messages.map((m, i) => ktMsgHtml(chat, m, chat.messages[i - 1])).join("");
+  const bottom = choiceMode
+    ? `<div class="kt-in kt-in-tap${noOpenChoicesReady ? " is-ready" : ""}" id="ktInTap" data-kt-tap>
+      <button class="kt-plus" aria-label="更多">${ktIcons.plus}</button>
+      <div class="kt-input kt-input-tap" role="button" tabindex="0" aria-label="点这里回复">${noOpenChoicesReady ? "点这里回复" : "输入一条信息"}</div>
+      <button class="kt-emoji" aria-label="表情">${ktIcons.emoji}</button>
+      <button class="kt-send" data-kt-tap aria-label="发送">${ktIcons.send}</button>
+    </div>
+    <div class="kt-choices" id="ktChoices" hidden></div>`
+    : `<div class="kt-in">
+      <button class="kt-plus" aria-label="更多">${ktIcons.plus}</button>
+      <input class="kt-input" type="text" placeholder="输入一条信息" aria-label="输入一条信息" />
+      <button class="kt-emoji" aria-label="表情">${ktIcons.emoji}</button>
+      <button class="kt-send" data-send aria-label="发送">${ktIcons.send}</button>
+    </div>`;
   return `<div class="pg kt-pg kt-chat-pg">
     <div class="kt-ch">
       <button class="kt-cback" data-pop aria-label="返回">${chev()}<span>${chat.unread ? escapeHtml(String(chat.unread)) : ""}</span></button>
@@ -674,12 +819,7 @@ function ktChatHtml(id) {
     </div>
     ${chat.notice ? `<div class="kt-notice" role="note">${ktPinSvg("kt-notice-pin")}<span class="kt-notice-tx"><b>置顶</b>${escapeHtml(chat.notice)}</span></div>` : ""}
     <div class="kt-msgs">${msgs}</div>
-    <div class="kt-in">
-      <button class="kt-plus" aria-label="更多">${ktIcons.plus}</button>
-      <input class="kt-input" type="text" placeholder="输入一条信息" aria-label="输入一条信息" />
-      <button class="kt-emoji" aria-label="表情">${ktIcons.emoji}</button>
-      <button class="kt-send" data-send aria-label="发送">${ktIcons.send}</button>
-    </div>
+    ${bottom}
   </div>`;
 }
 
@@ -704,6 +844,8 @@ function ktNextTime(chat) {
   return (PHONE.lockScreen && PHONE.lockScreen.time) || "10:56";
 }
 function ktSendMessage() {
+  // 不打开分支的输入栏是「点一下展开选项」的开关
+  if (storyRoute === "noOpen" && ktCurrentChatId === "jihun") { openNoOpenChoices(); return; }
   // 结局里和志薰的最后一段对话是写好的，不发进普通的消息流
   if (endingChat() && !endingSent) { ktEndingSend(); return; }
   const input = appL.querySelector(".kt-input");
@@ -919,8 +1061,9 @@ function amToggleShuffle() {
 
 function applemusicPage() {
   const songs = amSongs();
+  const start = Number.isInteger(PHONE.musicIndex) ? PHONE.musicIndex : AM_DEFAULT_INDEX;
   amState = {
-    index: songs.length ? Math.min(AM_DEFAULT_INDEX, songs.length - 1) : 0,
+    index: songs.length ? Math.min(start, songs.length - 1) : 0,
     playing: false,
     shuffle: false
   };
@@ -935,11 +1078,18 @@ function applemusicPage() {
 }
 
 /* ===== Temu ===== */
+const TEMU_TABS = [["order", "订单"], ["fav", "收藏"], ["cart", "购物车"]];
+let temuTab = "order";
+function temuCards() {
+  const items = (PHONE.temu || []).filter((item) => (item.tab || "order") === temuTab);
+  if (!items.length) return `<div class="empty">这里还什么都没有</div>`;
+  return items.map((item) => `<div class="tcard"><div class="timg">${escapeHtml(item.glyph || item.title.slice(0, 1))}<span class="st">${escapeHtml(item.status)}</span></div><div class="tbody"><b>${escapeHtml(item.title)}</b><p>${escapeHtml(item.detail)}</p><div class="pr">${escapeHtml(item.price)}</div></div></div>`).join("");
+}
 function temuPage() {
-  const cards = PHONE.temu.map((item) => `<div class="tcard"><div class="timg">${escapeHtml(item.title).slice(0, 1)}<span class="st">${escapeHtml(item.status)}</span></div><div class="tbody"><b>${escapeHtml(item.title)}</b><p>${escapeHtml(item.detail)}</p><div class="pr">${escapeHtml(item.price)}</div></div></div>`).join("");
+  const tabs = TEMU_TABS.map(([id, label]) => `<button data-temu-tab="${id}"${id === temuTab ? ' class="on"' : ""}>${label}</button>`).join("");
   const body = `<div class="t-top"><div class="brand">temu</div><div class="srch"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>搜索商品</div></div>
-    <div class="t-tabs"><button class="on">为你推荐</button><button>收藏</button><button>订单</button></div>
-    <div class="t-grid">${cards}</div>`;
+    <div class="t-tabs">${tabs}</div>
+    <div class="t-grid">${temuCards()}</div>`;
   return { title: "Temu", back: "主屏幕", large: "temu", cls: "grouped", body };
 }
 
@@ -1042,11 +1192,6 @@ function renderIntro() {
     <p class="intro-line intro-question">${escapeHtml(o.question || "")}</p>`;
   $("#introOpen").textContent = o.open || "打开";
   $("#introNo").textContent = o.close || "不打开";
-  const d = o.declined || {};
-  $("#noKicker").textContent = d.kicker || "不打开";
-  $("#noTitle").textContent = d.title || "故事先停在这里。";
-  $("#noSub").textContent = d.body || "这一部分的内容待补充。";
-  $("#noBack").textContent = d.back || "重新选择";
 }
 
 function renderLock() {
@@ -1621,7 +1766,9 @@ function cgAdvFollowFirst() {
 /* ===== 结局：她的手机 ===== */
 const HER_WEEK = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
 const herData = () => phoneData.herPhone || {};
-const endingData = () => (herData().endings || {})[endingKey] || null;
+const endingData = () => storyRoute === "noOpen"
+  ? noOpenPlan
+  : ((herData().endings || {})[endingKey] || null);
 
 // 结局入口：只在「他的手机 · 表白日期结果页」出现
 function syncStoryCta() {
@@ -1649,18 +1796,50 @@ function buildHerPhone() {
   const hp = herData();
   const end = endingData();
   if (!hp || !end) return;
+  const isNoOpen = storyRoute === "noOpen";
+  // 不打开分支每次抽到的日期和方案都可能不同，用它们做重建标记
+  const buildKey = isNoOpen ? `noOpen:${end.id}:${end.ideaIndex}` : endingKey;
 
-  const lock = herDate(-1);
-  hp.lockScreen = Object.assign({}, hp.lockScreen, {
-    date: `${lock.m}月${lock.d}日 ${lock.wd}`,
-    day: String(lock.d),
-    month: MONTH_NAMES[lock.m - 1],
-    weekday: lock.wd
-  });
+  if (isNoOpen) {
+    // 她没翻他的手机，故事就发生在当天晚上她自己的房间里
+    hp.lockScreen = Object.assign({}, hp.lockScreen, {
+      date: "12月10日 星期四",
+      day: "10",
+      month: "十二月",
+      weekday: "星期四",
+      lunar: "大雪",
+      time: end.lockTime || "23:06",
+      notification: {
+        app: "KakaoTalk",
+        title: "志薰",
+        text: end.preview || "睡了吗?? ㅎㅎ",
+        time: "现在"
+      }
+    });
+  } else {
+    const lock = herDate(-1);
+    hp.lockScreen = Object.assign({}, hp.lockScreen, {
+      date: `${lock.m}月${lock.d}日 ${lock.wd}`,
+      day: String(lock.d),
+      month: MONTH_NAMES[lock.m - 1],
+      weekday: lock.wd
+    });
+  }
+
+  // 见面的那一天补进日历和 Days Matter，桌面上 Days Matter 的数字也跟着变
+  const meet = herDate(0);
+  const meetKey = `${meet.y}-${meet.m}-${meet.d}`;
+  hp.calendar = (hp.calendar || []).filter((e) => !e._meet)
+    .concat([{ _meet: true, date: meetKey, title: "和志薰见面", time: end.meetTime || "19:00" }]);
+  hp.daysmatter = [{ _meet: true, title: "和志薰见面", date: meetKey, kind: "until" }]
+    .concat((hp.daysmatter || []).filter((i) => !i._meet));
+  const daysToMeet = Math.max(0, dmDaysBetween(herDate(-1), meet));
+  const dmApp = (hp.homeApps || []).find((a) => a.id === "daysmatter");
+  if (dmApp) dmApp.count = String(daysToMeet);
 
   const chats = (hp.kakaotalk && hp.kakaotalk.chats) || [];
   const jihun = chats.find((c) => c.id === "jihun");
-  if (!jihun || jihun._built === endingKey) return;
+  if (!jihun || jihun._built === buildKey) return;
 
   // 他手机上的那份聊天记录，翻过来就是她看到的
   const src = ((phoneData.kakaotalk || {}).chats || []).find((c) => c.id === "berry");
@@ -1670,6 +1849,16 @@ function buildHerPhone() {
     o.side = m.side === "me" ? "them" : "me";
     return o;
   });
+
+  if (isNoOpen) {
+    // 不再镜像结局里写好的那几天，改由下面的选项对话现写
+    jihun.messages = mirrored.concat([{ type: "date", text: "2026年12月10日 星期四" }]);
+    jihun.preview = end.preview || "睡了吗?? ㅎㅎ";
+    jihun.date = end.lockTime || "23:06";
+    jihun.unread = 1;
+    jihun._built = buildKey;
+    return;
+  }
 
   // 12 月 6 日之后补上的几天；日期分割线按选定日期自动生成
   const story = (hp.story && hp.story.messages) || [];
@@ -1701,6 +1890,7 @@ function enterHerPhone() {
   buildHerPhone();
   storyPhase = "her";
   endingSent = false;
+  playerPlaying = false;
   storyToken++;
   PHONE = herData();
   wall.style.background = herWallpaper();
@@ -1714,18 +1904,26 @@ function enterHerPhone() {
   $("#storyCta").classList.remove("on");
   renderHome();
   renderLock();
+  loadPlayerAudio();
   showScreen("lock");
 }
 
-// 黑场旁白：一行一行浮现，轻触可以直接跳过
-function runBridge() {
+// 黑场旁白：一行一行浮现；轻触一次先显示全文，再轻触一次才继续
+function runBridge(lines) {
   const veil = $("#endVeil"), box = $("#endVeilIn");
-  const lines = (herData().bridge && herData().bridge.lines) || [];
-  box.innerHTML = lines.map((t) => `<p class="end-veil-line">${escapeHtml(t)}</p>`).join("");
+  const list = lines || (herData().bridge && herData().bridge.lines) || [];
+  box.innerHTML = list.map((t) => `<p class="end-veil-line">${escapeHtml(t)}</p>`).join("");
   const nodes = Array.from(box.children);
   const timers = [];
-  let i = 0, finished = false;
+  let i = 0, allShown = false, finished = false;
   const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+  // 把剩下的几行一次亮完，停在全文状态等第二次点击
+  const showAll = () => {
+    if (allShown || finished) return;
+    allShown = true;
+    timers.forEach(clearTimeout);
+    nodes.forEach((n) => n.classList.add("on"));
+  };
   const finish = () => {
     if (finished) return;
     finished = true;
@@ -1738,14 +1936,14 @@ function runBridge() {
   };
   const next = () => {
     if (finished) return;
-    if (i >= nodes.length) { later(finish, 1500); return; }
+    if (i >= nodes.length) { allShown = true; later(finish, 1500); return; }
     nodes[i].classList.add("on");
     i++;
     later(next, 1500);
   };
   veil.classList.add("on");
   veil.setAttribute("aria-hidden", "false");
-  veil.onclick = finish;
+  veil.onclick = () => (allShown ? finish() : showAll());
   later(next, 420);
 }
 
@@ -1754,11 +1952,78 @@ function startEnding() {
   const res = cgAdv.result;
   const key = (res && res.meta && res.meta.dateId) || "christmasEve";
   if (!(herData().endings || {})[key]) return;
+  storyRoute = "open";
   endingKey = key;
   endingSent = false;
   storyToken++;
   $("#storyCta").classList.remove("on");
   runBridge();
+}
+
+/* --- 不打开：随机抽一份告白计划，直接去她自己的手机 --- */
+const noOpenData = () => herData().noOpen || {};
+const pickOne = (list) => list[Math.floor(Math.random() * list.length)];
+
+function rollNoOpenPlan() {
+  const plans = noOpenData().plans || [];
+  if (!plans.length) return null;
+  const base = pickOne(plans);
+  const ideas = base.ideas || [];
+  const idea = ideas.length ? pickOne(ideas) : {};
+  return Object.assign({}, base, { idea, ideaIndex: Math.max(0, ideas.indexOf(idea)) });
+}
+
+// 把方案里的 {place} 之类换成这一轮抽中的内容
+function fillPlan(text) {
+  const plan = noOpenPlan || {};
+  const idea = plan.idea || {};
+  const map = {
+    place: idea.place || "",
+    detail: idea.detail || "",
+    extra: idea.extra || "",
+    dateWord: plan.dateWord || "",
+    whenWord: plan.whenWord || ""
+  };
+  return String(text).replace(/\{(place|detail|extra|dateWord|whenWord)\}/g, (_, k) => map[k] || "");
+}
+
+let noOpenStarted = false;
+let noOpenBusy = false;
+let noOpenFinished = false;
+let noOpenStep = 0;
+let noOpenTone = null;
+let noOpenTyping = null;   // opening | lead | reply，用于中途离开后接上进度
+let noOpenChoicesReady = false;   // 选项已经备好，等玩家点输入栏
+
+function resetNoOpenChat() {
+  noOpenStarted = false;
+  noOpenBusy = false;
+  noOpenFinished = false;
+  noOpenStep = 0;
+  noOpenTone = null;
+  noOpenTyping = null;
+  noOpenChoicesReady = false;
+}
+
+function startNoOpenBranch() {
+  const plan = rollNoOpenPlan();
+  if (!plan) { showPasscode("name"); return; }
+  storyRoute = "noOpen";
+  storyPhase = "his";
+  endingKey = null;
+  noOpenPlan = plan;
+  endingSent = false;
+  storyToken++;
+
+  // 清掉上一轮留下的聊天，让他手机里那份记录重新镜像过来
+  const hp = herData();
+  const chats = (hp.kakaotalk && hp.kakaotalk.chats) || [];
+  const jihun = chats.find((c) => c.id === "jihun");
+  if (jihun) { jihun._built = null; jihun.messages = []; jihun.unread = 0; }
+  resetNoOpenChat();
+  resetCall();
+
+  runBridge(noOpenData().bridge && noOpenData().bridge.lines);
 }
 
 /* --- 她的 KakaoTalk：预填的一句话与他的回复 --- */
@@ -1767,10 +2032,12 @@ const endingChat = () => storyPhase === "her" && currentApp === "kakaotalk"
 
 function endingPrefill() {
   if (!endingChat() || endingSent) return;
+  if (storyRoute === "noOpen") { resumeNoOpenChat(); return; }
   const end = endingData();
   const input = appL.querySelector(".kt-input");
   if (!end || !input || input.value) return;
-  input.value = end.sendText || "是明天吗？";
+  const sendText = (herData().story || {}).sendText || "";
+  input.value = end.sendText || sendText || "是明天吗？";
   input.classList.add("kt-prefill");
   input.blur();
 }
@@ -1794,13 +2061,162 @@ function ktTyping(box, chat, on) {
   box.scrollTop = box.scrollHeight;
 }
 
+/* --- 不打开分支：他一句一句发，她来选怎么回 --- */
+function ktNoOpenType(lines, done) {
+  const box = appL.querySelector(".kt-msgs");
+  const chat = ktChatById("jihun");
+  if (!box || !chat) return;
+  const token = ++storyToken;
+  const alive = () => storyToken === token && document.contains(box);
+  let delay = 600;
+  ktTyping(box, chat, true);
+  (lines || []).forEach((m, i) => {
+    delay += i === 0 ? 700 : 850;
+    setTimeout(() => {
+      if (!alive()) return;
+      ktTyping(box, chat, false);
+      const obj = typeof m === "string" ? { text: m } : m;
+      ktAppend(chat, box, { side: "them", time: obj.time || ktNextTime(chat), text: fillPlan(obj.text) });
+      if (i < lines.length - 1) setTimeout(() => { if (alive()) ktTyping(box, chat, true); }, 380);
+    }, delay);
+  });
+  setTimeout(() => {
+    if (!alive()) return;
+    ktTyping(box, chat, false);
+    if (done) done();
+  }, delay + 700);
+}
+
+// 选项备好，但先不展开：输入栏变成「点这里回复」，玩家点一下才弹出选项
+function armNoOpenChoices() {
+  const step = noOpenPlan && (noOpenPlan.steps || [])[noOpenStep];
+  if (!step) return;
+  noOpenChoicesReady = true;
+  noOpenBusy = false;
+  noOpenTyping = null;
+  const bar = appL.querySelector("#ktInTap");
+  if (bar) {
+    bar.hidden = false;
+    bar.classList.add("is-ready");
+    const input = bar.querySelector(".kt-input-tap");
+    if (input) input.textContent = "点这里回复";
+  }
+}
+
+// 点输入栏：把选项栏展开，输入栏收起来
+function openNoOpenChoices() {
+  if (storyRoute !== "noOpen" || !noOpenChoicesReady) return;
+  const step = noOpenPlan && (noOpenPlan.steps || [])[noOpenStep];
+  const bar = appL.querySelector("#ktInTap");
+  const box = appL.querySelector("#ktChoices");
+  if (!step || !bar || !box) return;
+  box.innerHTML = (step.choices || []).map((c, i) =>
+    `<button class="kt-choice" type="button" data-kt-choice="${i}">${escapeHtml(fillPlan(c.text))}</button>`).join("");
+  bar.hidden = true;
+  box.hidden = false;
+  noOpenBusy = false;
+  noOpenTyping = null;
+  const msgs = appL.querySelector(".kt-msgs");
+  if (msgs) msgs.scrollTop = msgs.scrollHeight;
+}
+
+function hideNoOpenChoices() {
+  noOpenChoicesReady = false;
+  const box = appL.querySelector("#ktChoices");
+  if (box) { box.hidden = true; box.innerHTML = ""; }
+  const bar = appL.querySelector("#ktInTap");
+  if (bar) {
+    bar.hidden = false;
+    bar.classList.remove("is-ready");
+    const input = bar.querySelector(".kt-input-tap");
+    if (input) input.textContent = "输入一条信息";
+  }
+}
+
+function runNoOpenStep() {
+  const step = noOpenPlan && (noOpenPlan.steps || [])[noOpenStep];
+  if (!step) {
+    finishNoOpenChat();
+    return;
+  }
+  const lead = step.lead || [];
+  if (!lead.length) { armNoOpenChoices(); return; }
+  noOpenBusy = true;
+  noOpenTyping = "lead";
+  ktNoOpenType(lead, () => {
+    noOpenTyping = null;
+    armNoOpenChoices();
+  });
+}
+
+function startNoOpenChat() {
+  if (storyRoute !== "noOpen" || noOpenStarted || !noOpenPlan) return;
+  noOpenStarted = true;
+  noOpenBusy = true;
+  noOpenTyping = "opening";
+  const chat = ktChatById("jihun");
+  if (chat) chat.unread = 0;
+  const badge = appL.querySelector(".kt-cback span");
+  if (badge) badge.textContent = "";
+  ktNoOpenType(noOpenPlan.opening || [], () => {
+    noOpenTyping = null;
+    noOpenBusy = false;
+    runNoOpenStep();
+  });
+}
+
+// 离开聊天再回来：不重放整段，只把当前这一步接上
+function resumeNoOpenChat() {
+  if (storyRoute !== "noOpen" || !noOpenPlan) return;
+  if (!noOpenStarted) { startNoOpenChat(); return; }
+  if (noOpenFinished) return;
+  const typing = noOpenTyping;
+  noOpenBusy = false;
+  noOpenTyping = null;
+  // 如果是在他回复的中途离开，这一步其实已经选过了，直接进下一步
+  if (typing === "reply") { runNoOpenStep(); return; }
+  const steps = noOpenPlan.steps || [];
+  if (noOpenStep < steps.length) armNoOpenChoices();
+  else finishNoOpenChat();
+}
+
+// 聊天走完：先让他打一通电话，电话挂断之后才翻到日记
+function finishNoOpenChat() {
+  if (noOpenFinished) return;
+  noOpenFinished = true;
+  noOpenBusy = false;
+  hideNoOpenChoices();
+  startIncomingCall(() => showCoda());
+}
+
+function chooseNoOpen(i) {
+  if (storyRoute !== "noOpen" || noOpenBusy || noOpenFinished) return;
+  const step = noOpenPlan && (noOpenPlan.steps || [])[noOpenStep];
+  const choice = step && (step.choices || [])[i];
+  const box = appL.querySelector(".kt-msgs");
+  const chat = ktChatById("jihun");
+  if (!choice || !box || !chat) return;
+  hideNoOpenChoices();
+  noOpenBusy = true;
+  noOpenTone = choice.tone || noOpenTone;
+  ktAppend(chat, box, { side: "me", time: ktNextTime(chat), text: fillPlan(choice.text) });
+  // 先记下这一步已经选过：中途离开再回来不会让她重复选
+  noOpenStep++;
+  noOpenTyping = "reply";
+  ktNoOpenType(choice.replies || [], () => {
+    noOpenTyping = null;
+    noOpenBusy = false;
+    runNoOpenStep();
+  });
+}
+
 function ktEndingSend() {
   const end = endingData();
   const input = appL.querySelector(".kt-input");
   const box = appL.querySelector(".kt-msgs");
   const chat = ktChatById("jihun");
   if (!end || !input || !box || !chat) return;
-  const text = (input.value || "").trim() || end.sendText || "";
+  const text = (input.value || "").trim() || end.sendText || (herData().story || {}).sendText || "";
   if (!text) return;
 
   const token = ++storyToken;
@@ -1830,8 +2246,11 @@ function showCoda() {
   if (!end) return;
   const c = end.coda || {};
   $("#endCodaDate").textContent = c.date || "";
-  $("#endCodaBody").innerHTML = (c.lines || []).map((t) => `<p>${escapeHtml(withNick(t))}</p>`).join("");
-  $("#endCodaQuote").textContent = withNick(c.quote || "");
+  $("#endCodaBody").innerHTML = (c.lines || []).map((t) => `<p>${escapeHtml(withNick(fillPlan(t)))}</p>`).join("");
+  const quotes = c.quotes || {};
+  const q = storyRoute === "noOpen" ? (quotes[noOpenTone || "warm"] || quotes.warm) : c.quote;
+  const quote = Array.isArray(q) ? (pickOne(q) || "") : (q || "");
+  $("#endCodaQuote").textContent = withNick(fillPlan(quote));
   const el = $("#endCoda");
   el.classList.add("on");
   el.setAttribute("aria-hidden", "false");
@@ -1841,6 +2260,187 @@ function hideCoda() {
   const el = $("#endCoda");
   el.classList.remove("on");
   el.setAttribute("aria-hidden", "true");
+  showEndCard();
+}
+
+/* --- 结局卡：日记合上之后，给这一次的结局一个收尾 --- */
+const cnDate = (iso) => {
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(iso || ""));
+  return m ? `${Number(m[2])}月${Number(m[3])}日` : "";
+};
+
+function showEndCard() {
+  const hp = herData();
+  const card = hp.endCard || {};
+  const routeText = (storyRoute === "noOpen" ? card.noOpen : card.open) || {};
+  let meta = "";
+  if (storyRoute === "noOpen") {
+    const plan = noOpenPlan || {};
+    meta = [plan.dateWord, plan.meetTime].filter(Boolean).join(" · ");
+  } else {
+    const end = (hp.endings || {})[endingKey] || {};
+    meta = [cnDate(end.target), end.dateName, end.meetTime].filter(Boolean).join(" · ");
+  }
+  $("#endCardKicker").textContent = card.kicker || "END";
+  $("#endCardTitle").textContent = withNick(routeText.title || "");
+  $("#endCardMeta").textContent = meta;
+  $("#endCardLine").textContent = withNick(routeText.line || "");
+  const el = $("#endCard");
+  el.classList.add("on");
+  el.setAttribute("aria-hidden", "false");
+}
+
+function hideEndCard() {
+  const el = $("#endCard");
+  el.classList.remove("on");
+  el.setAttribute("aria-hidden", "true");
+}
+
+/* --- 不打开线：聊天结束后他打来的那通电话 --- */
+let callTimerId = null;
+let callEndTimer = null;
+let callDone = null;
+let callDeclines = 0;
+let callToken = 0;
+
+function resetCall() {
+  clearInterval(callTimerId); callTimerId = null;
+  clearTimeout(callEndTimer); callEndTimer = null;
+  callDone = null;
+  callDeclines = 0;
+  callToken++;
+  const audio = $("#callAudio");
+  if (audio) {
+    audio.onended = null;
+    audio.pause();
+    try { audio.currentTime = 0; } catch (e) { /* 还没加载出元数据时忽略 */ }
+  }
+  const el = $("#callL");
+  if (el) {
+    el.classList.remove("on");
+    el.setAttribute("aria-hidden", "true");
+  }
+  document.body.classList.remove("call-open");
+}
+
+function startIncomingCall(onDone) {
+  const call = noOpenData().call || {};
+  const el = $("#callL");
+  if (!el || !call.audio) { if (onDone) onDone(); return; }
+  resetCall();
+  callDone = onDone || null;
+  $("#callKind").textContent = call.kind || "KakaoTalk 语音通话";
+  $("#callName").textContent = call.from || "志薰";
+  $("#callSub").textContent = call.subtitle || "邀请你进行语音通话";
+  $("#callTimer").hidden = true;
+  $("#callTimer").textContent = "00:00";
+  const cap = $("#callCaption");
+  cap.textContent = "";
+  cap.classList.remove("on");
+  $("#callIncoming").hidden = false;
+  $("#callActive").hidden = true;
+  const av = $("#callAvatar");
+  av.innerHTML = call.avatar ? `<img src="${escapeHtml(call.avatar)}" alt="" />` : "";
+  const audio = $("#callAudio");
+  audio.src = call.audio;
+  audio.load();
+  el.classList.add("on");
+  el.setAttribute("aria-hidden", "false");
+  document.body.classList.add("call-open");
+}
+
+function answerCall() {
+  const call = noOpenData().call || {};
+  const el = $("#callL");
+  if (!el || !el.classList.contains("on") || $("#callIncoming").hidden) return;
+  $("#callIncoming").hidden = true;
+  $("#callActive").hidden = false;
+  $("#callSub").textContent = "通话中";
+
+  const startedAt = Date.now();
+  const timer = $("#callTimer");
+  timer.hidden = false;
+  clearInterval(callTimerId);
+  callTimerId = setInterval(() => {
+    const s = Math.floor((Date.now() - startedAt) / 1000);
+    timer.textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  }, 250);
+
+  const cap = $("#callCaption");
+  if (call.caption) {
+    setTimeout(() => {
+      if (!el.classList.contains("on")) return;
+      cap.textContent = withNick(fillPlan(call.caption));
+      cap.classList.add("on");
+    }, 1100);
+  }
+
+  const audio = $("#callAudio");
+  const token = callToken;
+  let ended = false;
+  const finish = () => {
+    if (ended || token !== callToken) return;
+    ended = true;
+    endCall();
+  };
+  audio.onended = finish;
+  try { audio.currentTime = 0; } catch (e) { /* 忽略 */ }
+  const played = audio.play();
+  if (played && played.catch) played.catch(() => { /* 被浏览器拦下也继续走计时兜底 */ });
+  // 音频没触发 ended（离线 / 格式不支持）时，按它的长度收尾
+  const ms = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration * 1000 : 5800;
+  clearTimeout(callEndTimer);
+  callEndTimer = setTimeout(finish, ms + 900);
+}
+
+function endCall() {
+  const call = noOpenData().call || {};
+  clearInterval(callTimerId); callTimerId = null;
+  clearTimeout(callEndTimer); callEndTimer = null;
+  const audio = $("#callAudio");
+  if (audio) { audio.onended = null; audio.pause(); }
+  const el = $("#callL");
+  if (!el) return;
+  // 已经不在通话界面：直接继续
+  if (!el.classList.contains("on")) {
+    const done = callDone;
+    callDone = null;
+    if (done) done();
+    return;
+  }
+  $("#callIncoming").hidden = true;
+  $("#callActive").hidden = true;
+  $("#callSub").textContent = call.endingNote || "通话结束";
+  const token = ++callToken;
+  setTimeout(() => {
+    if (token !== callToken) return;
+    el.classList.remove("on");
+    el.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("call-open");
+    const done = callDone;
+    callDone = null;
+    if (done) done();
+  }, 1100);
+}
+
+function declineCall() {
+  const call = noOpenData().call || {};
+  const el = $("#callL");
+  if (!el || !el.classList.contains("on") || $("#callIncoming").hidden) return;
+  // 第一次挂掉，他会再打一次；第二次才真的挂断
+  if (callDeclines === 0) {
+    callDeclines = 1;
+    $("#callSub").textContent = "已拒绝";
+    $("#callIncoming").hidden = true;
+    setTimeout(() => {
+      if (!el.classList.contains("on") || callDeclines !== 1) return;
+      $("#callSub").textContent = call.againSubtitle || "又打来了";
+      $("#callIncoming").hidden = false;
+    }, 1400);
+    return;
+  }
+  callDeclines = 2;
+  endCall();
 }
 
 /* ===== ChatGPT · 音乐剧穿搭建议 ===== */
@@ -1898,12 +2498,21 @@ function cgMusicalChatHtml() {
 function chatgptMusicalPage() { return { title: "ChatGPT", full: cgMusicalChatHtml }; }
 
 /* ===== 事件 ===== */
-$("#introOpen").addEventListener("click", () => {
+const nmHint = $("#nmHint");
+function openNameScreen(choice) {
+  introChoice = choice;
+  if (choice === "noOpen") {
+    nmHint.textContent = "先告诉我你的名字吧。他会这样叫你。";
+    nmHint.hidden = false;
+  } else {
+    nmHint.textContent = "";
+    nmHint.hidden = true;
+  }
   showScreen("name");
   setTimeout(() => nmInput.focus(), 360);
-});
-$("#introNo").addEventListener("click", () => showScreen("no"));
-$("#noBack").addEventListener("click", () => showScreen("intro"));
+}
+$("#introOpen").addEventListener("click", () => openNameScreen("open"));
+$("#introNo").addEventListener("click", () => openNameScreen("noOpen"));
 
 let startY = null;
 lockL.addEventListener("pointerdown", (e) => { startY = e.clientY; });
@@ -1924,10 +2533,23 @@ function unlockFromLock() {
 $("#lkPlayer").addEventListener("click", (e) => {
   const btn = e.target.closest("[data-lp]");
   if (!btn) return;
-  if (btn.dataset.lp === "play") {
-    btn.innerHTML = btn.classList.toggle("paused") ? iconPlay : iconPause;
-  }
+  if (btn.dataset.lp === "play") handlePlayerButton(btn);
 });
+
+// 锁屏 / 桌面小组件共用一个音频元素
+const lkAudio = $("#lkAudio");
+if (lkAudio) {
+  lkAudio.addEventListener("play", () => { playerPlaying = true; setPlayerUi(); });
+  lkAudio.addEventListener("pause", () => { playerPlaying = false; setPlayerUi(); });
+  lkAudio.addEventListener("timeupdate", renderPlayerTimes);
+  lkAudio.addEventListener("loadedmetadata", renderPlayerTimes);
+  lkAudio.addEventListener("ended", () => {
+    playerPlaying = false;
+    setPlayerUi();
+    try { lkAudio.currentTime = 0; } catch (e) { /* 忽略 */ }
+    renderPlayerTimes();
+  });
+}
 
 $("#pcPad").addEventListener("click", (e) => {
   const key = e.target.closest("[data-pc]");
@@ -1947,6 +2569,16 @@ $("#pcCancel").addEventListener("click", () => {
 $("#pcSos").addEventListener("click", () => { /* 装饰 */ });
 
 /* ===== 昵称设置 ===== */
+function afterNickname() {
+  nmInput.blur();
+  nmHint.hidden = true;
+  if (introChoice === "noOpen") {
+    introChoice = "open";
+    startNoOpenBranch();
+    return;
+  }
+  showPasscode("name");
+}
 function applyNickname() {
   const v = nmInput.value.trim();
   if (!v) {
@@ -1956,8 +2588,7 @@ function applyNickname() {
     return;
   }
   heroineName = v;
-  nmInput.blur();
-  showPasscode("name");
+  afterNickname();
 }
 nmInput.addEventListener("input", () => {
   nmInput.classList.remove("shake");
@@ -1967,17 +2598,17 @@ nmInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") { e.preventDefault(); applyNickname(); }
 });
 nmOk.addEventListener("click", applyNickname);
-$("#nmSkip").addEventListener("click", () => { nmInput.blur(); showPasscode("name"); });
+$("#nmSkip").addEventListener("click", afterNickname);
 
 $("#homeL").addEventListener("click", (e) => {
   const play = e.target.closest("[data-home-play]");
-  if (play) { play.innerHTML = play.classList.toggle("paused") ? iconPlay : iconPause; return; }
-  if (e.target.closest("#wCal")) { if (storyPhase !== "her") openApp("calendar"); return; }
+  if (play) { handlePlayerButton(play); return; }
+  if (e.target.closest("#wCal")) { openApp("calendar"); return; }
   const btn = e.target.closest("[data-app]");
   if (!btn) return;
-  // 她的手机里只有 KakaoTalk 和相册可以打开，其余图标只是桌面陈设
+  // 她的手机里 KakaoTalk、相册、备忘录、日历、音乐和 Days Matter 都能打开，其余图标只是桌面陈设
   if (storyPhase === "her") {
-    if (btn.dataset.app === "kakaotalk" || btn.dataset.app === "photos") openApp(btn.dataset.app);
+    if (["kakaotalk", "photos", "notes", "calendar", "applemusic", "daysmatter"].includes(btn.dataset.app)) openApp(btn.dataset.app);
     return;
   }
   if (!IMPLEMENTED_APPS.has(btn.dataset.app)) return;
@@ -1987,12 +2618,12 @@ $("#homeL").addEventListener("keydown", (e) => {
   if (e.key !== "Enter" && e.key !== " ") return;
   if (!e.target.closest("#wCal")) return;
   e.preventDefault();
-  if (storyPhase !== "her") openApp("calendar");
+  openApp("calendar");
 });
 $("#themeBtn").addEventListener("click", () => document.body.classList.toggle("dark"));
 $("#hb").addEventListener("click", () => {
   if (currentApp) exitApp();
-  else if (noL.classList.contains("active") || nameL.classList.contains("active")) { showScreen("intro"); }
+  else if (nameL.classList.contains("active")) { showScreen("intro"); }
   else if (passL.classList.contains("active")) { showScreen("lock"); }
   else if (homeL.classList.contains("active")) { showScreen("lock"); }
 });
@@ -2074,6 +2705,10 @@ $("#appL").addEventListener("click", (e) => {
     if (ktCurrentChatId === "jihun") requestAnimationFrame(endingPrefill);
     return;
   }
+  const ktChoice = e.target.closest("[data-kt-choice]");
+  if (ktChoice) { chooseNoOpen(Number(ktChoice.dataset.ktChoice)); return; }
+  // 不打开分支：点输入栏（或发送键）才展开选项
+  if (e.target.closest("[data-kt-tap]")) { openNoOpenChoices(); return; }
   if (e.target.closest("[data-send]")) { ktSendMessage(); return; }
 
   /* 日历 */
@@ -2082,6 +2717,16 @@ $("#appL").addEventListener("click", (e) => {
   const calNav = e.target.closest("[data-cal-nav]");
   if (calNav) { calShiftMonth(Number(calNav.dataset.calNav)); return; }
   if (e.target.closest("[data-cal-today]")) { calGoToday(); return; }
+
+  /* Temu 顶部标签 */
+  const tTab = e.target.closest("[data-temu-tab]");
+  if (tTab) {
+    temuTab = tTab.dataset.temuTab;
+    document.querySelectorAll("[data-temu-tab]").forEach((b) => b.classList.toggle("on", b === tTab));
+    const grid = document.querySelector(".t-grid");
+    if (grid) grid.innerHTML = temuCards();
+    return;
+  }
 
   const note = e.target.closest("[data-note]");
   if (note) {
@@ -2097,7 +2742,11 @@ $("#appL").addEventListener("click", (e) => {
 
 $("#appL").addEventListener("keydown", (e) => {
   if (e.key !== "Enter") return;
-  if (e.target.classList.contains("kt-input")) { e.preventDefault(); ktSendMessage(); }
+  if (e.target.classList.contains("kt-input")) {
+    e.preventDefault();
+    if (e.target.classList.contains("kt-input-tap")) openNoOpenChoices();
+    else ktSendMessage();
+  }
   else if (e.target.classList.contains("cg-input")) { e.preventDefault(); cgSend(); }
 });
 
@@ -2115,11 +2764,18 @@ $("#appL").addEventListener("scroll", (e) => {
   if (btn) btn.classList.toggle("show", t.scrollHeight - t.scrollTop - t.clientHeight > 80);
 }, true);
 
-/* ===== 结局：转场与日记卡片 ===== */
+/* ===== 结局：转场、日记卡片与结局卡 ===== */
 $("#storyCta").addEventListener("click", startEnding);
 $("#endCoda").addEventListener("click", (e) => {
   if (e.target.closest("[data-coda-close]") || e.target.id === "endCoda") hideCoda();
 });
+$("#endRestart").addEventListener("click", () => location.reload());
+$("#endStay").addEventListener("click", () => { hideEndCard(); exitApp(); });
+
+/* ===== 不打开线：最后那通电话 ===== */
+$("#callAnswer").addEventListener("click", answerCall);
+$("#callDecline").addEventListener("click", declineCall);
+$("#callHangup").addEventListener("click", endCall);
 document.addEventListener("keydown", (e) => {
   if ($("#photoView").classList.contains("on")) {
     if (e.key === "Escape") { e.preventDefault(); closePhotoViewer(); }

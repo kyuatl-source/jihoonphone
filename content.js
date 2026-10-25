@@ -16,14 +16,7 @@ const phoneData = {
     body: "你和暧昧对象韩志薰先生正在汉江公园牵着doori吹冷风，之后的计划是在江边吃点零食。韩志薰先生在点完咖啡外卖后表示想去厕所，但又怕外卖员来了找不到地方，于是他把手机留给你后独自离开了。",
     question: "你对他的手机好奇吗？要不要打开看看呢？",
     open: "打开",
-    close: "不打开",
-    // 选择「不打开」后的占位画面，后续可以直接替换这四项
-    declined: {
-      kicker: "不打开",
-      title: "故事先停在这里。",
-      body: "这一部分的内容待补充。",
-      back: "重新选择"
-    }
+    close: "不打开"
   },
   lockScreen: {
     date: "12月10日 星期四",
@@ -40,17 +33,28 @@ const phoneData = {
     player: { title: "plot twist", artist: "TWS", elapsed: "0:03", remaining: "-2:29", progress: 2 }
   },
   home: {
-    photo: "pics/桌面.jpg"   // 照片小组件的图片，可换成 pics/照片.jpg
+    photo: "pics/doori2.jpg"   // 照片小组件的图片（不要和锁屏壁纸用同一张）
   },
   // 桌面图标顺序；badge 为红色角标，count 显示在 Days Matter 图标上
   homeApps: [
     { id: "kakaotalk", name: "KakaoTalk" },
-    { id: "phone", name: "电话", badge: 82 },
-    { id: "daysmatter", name: "Days Matter", count: "23" },
+    { id: "phone", name: "电话" },
+    { id: "daysmatter", name: "Days Matter", count: "10" },
     { id: "notes", name: "备忘录" },
+    { id: "photos", name: "相册" },
     { id: "applemusic", name: "Apple Music" },
     { id: "temu", name: "Temu" }
   ],
+  // 他手机里的相册：照片不多，一半是 doori，一半是她
+  album: {
+    person: { name: "doori", avatar: "pics/doori2.jpg" },
+    photos: [
+      { src: "pics/doori2.jpg" },
+      { src: "pics/doori1.jpeg" },
+      { src: "pics/志薰手机相册展示.JPG" },
+      { src: "pics/261001.jpeg", fav: true }
+    ]
+  },
   dockApps: [
     { id: "safari", name: "Safari" },
     { id: "calendar", name: "日历" },
@@ -154,6 +158,13 @@ const phoneData = {
       time: "23:19",
       category: "日记",
       body: "现在是刚和姐姐吃完饭回家的状态。\n\n让我整理一下接下来要做的事情……\n\n首先，大体的计划是，10号要让她打开我的手机才行…虽然不打开我的手机我也应该能想出解决办法吧…但是如果能打开就好了\n\n姐姐说相比于密不透风的惊喜，稍微透点风的惊喜有时候也是不错的\n\n早保密具体事件的情况下，可以透露出日期\n\n在保密日期的情况下，可以透露出一点点时间\n\n最理想的情况里，我希望她能选出日期。"
+    },
+    {
+      date: "261208",
+      time: "00:41",
+      category: "备忘录",
+      title: "12月要做的事",
+      body: "10号 让她打开我的手机\n\n* 位置先订好 要安静一点的 能好好说话\n* 花 不要康乃馨 也不要太香的那种\n* 第一句说什么 想好了再说 不要一开口就结巴\n* 出门前再练两遍 不要在镜子前面站太久\n* doori 那天怎么办 要不要一起带过去\n* 如果她没打开手机 就当作什么都没发生 重新想一次"
     }
   ],
   calendar: [
@@ -178,6 +189,15 @@ const phoneData = {
     { date: "261224", title: "平安夜" },
     { date: "261225", title: "圣诞节" },
     { date: "270101", title: "元旦" }
+  ],
+  // Days Matter：kind 为 "since" 是纪念日（已经过去多少天），"until" 是倒数日
+  daysmatter: [
+    { title: "香蕉牛奶那天", date: "2026-09-13", kind: "since", note: "她给的" },
+    { title: "第一次约会", date: "2026-11-30", kind: "since", note: "音乐剧" },
+    { title: "doori来家里", date: "2026-12-06", kind: "since" },
+    { title: "论文初稿", date: "2026-12-20", kind: "until" },
+    { title: "平安夜", date: "2026-12-24", kind: "until" },
+    { title: "元旦", date: "2027-01-01", kind: "until" }
   ],
   /*
    * KakaoTalk：
@@ -900,10 +920,21 @@ const phoneData = {
     { title: "My Love Mine All Mine", artist: "Mitski", cover: "mylove", glyph: "m", tint: ["#8b2446", "#d66c8c"] },
     { title: "green to blue (slowed + reverbed)", artist: "daniel.mp3", cover: "greenblue", glyph: "≋", tint: ["#4f8f86", "#2d5f8c"] }
   ],
+  // 他的 Temu：手机壳为主，混着随手买的杂货；tab 决定进「订单 / 收藏 / 购物车」哪一栏，glyph 是封面上的字
   temu: [
-    { status: "已收藏", title: "草莓图案杯套", detail: "她的水杯总是很烫。", price: "¥ 18.90" },
-    { status: "已取消", title: "拍立得相纸", detail: "取消原因：再想想。", price: "¥ 56.00" },
-    { status: "待收货", title: "浅蓝色发夹", detail: "预计在 6 月 11 日送达。", price: "¥ 12.80" }
+    { tab: "order", status: "已签收", glyph: "壳", title: "透明手机壳 3个装", detail: "9 月买的，现在黄得像琥珀。", price: "¥ 4.90" },
+    { tab: "order", status: "已签收", glyph: "磁", title: "磁吸手机壳 黑色", detail: "吸不住。壳比手机还重。", price: "¥ 12.90" },
+    { tab: "order", status: "已签收", glyph: "液", title: "液态硅胶壳 雾蓝", detail: "买错型号了，iPhone 14 的。", price: "¥ 9.80" },
+    { tab: "order", status: "已签收", glyph: "架", title: "手机支架 折叠款", detail: "在便利店吃饭的时候用。", price: "¥ 6.50" },
+    { tab: "order", status: "已签收", glyph: "线", title: "发光数据线 1.8m", detail: "晚上充电一闪一闪，吓到 doori。", price: "¥ 8.90" },
+    { tab: "order", status: "已退款", glyph: "绳", title: "手机壳 带挂绳", detail: "孔位不对，退了三天。", price: "¥ 15.00" },
+    { tab: "order", status: "已签收", glyph: "暖", title: "暖宝宝 50 片", detail: "她说站一天脚冷。", price: "¥ 19.90" },
+    { tab: "order", status: "待收货", glyph: "狗", title: "doori 的发声玩具", detail: "第三天了，它还是很喜欢咬鞋。", price: "¥ 11.90" },
+    { tab: "order", status: "待收货", glyph: "灯", title: "9.9 小夜灯", detail: "放在玄关，回家不用摸黑。", price: "¥ 9.90" },
+    { tab: "fav", status: "已收藏", glyph: "壳", title: "手机壳 透明磨砂 2个", detail: "等这个先用黄了再说。", price: "¥ 7.90" },
+    { tab: "fav", status: "已收藏", glyph: "镜", title: "手机壳 相机保护款", detail: "评论说镜头会顶膜。", price: "¥ 13.90" },
+    { tab: "cart", status: "购物车", glyph: "壳", title: "手机壳 3个装（又）", detail: "颜色随机，赌一把。", price: "¥ 6.90" },
+    { tab: "cart", status: "购物车", glyph: "扣", title: "数据线收纳扣", detail: "凑单用的。", price: "¥ 3.20" }
   ],
 
   /* ===== 结局：她的手机 =====
@@ -926,7 +957,15 @@ const phoneData = {
       battery: 46,
       wallpaper: "linear-gradient(168deg,#1f2230 0%,#3a3448 44%,#7c5b68 78%,#c08f77 100%)",
       notification: { app: "KakaoTalk", title: "室友", text: "门没锁，我先进去了", time: "22:10" },
-      player: { title: "My Love Mine All Mine", artist: "Mitski", elapsed: "0:52", remaining: "-1:45", progress: 33 }
+      // 她锁屏 / 桌面音乐组件上的这首是他唱的外国人的告白；写了 audio 播放键就真的会放
+      player: {
+        title: "외국인의 고백",
+        artist: "지훈",
+        elapsed: "0:00",
+        remaining: "-1:31",
+        progress: 0,
+        audio: "音频/10月25日.mp3"
+      }
     },
     home: {
       photo: "pics/doori1.jpeg"   // 她桌面上的照片小组件
@@ -937,13 +976,97 @@ const phoneData = {
       { id: "calendar", name: "日历" },
       { id: "notes", name: "备忘录" },
       { id: "photos", name: "相册" },
-      { id: "daysmatter", name: "Days Matter", count: "1" },
-      { id: "temu", name: "Temu" }
+      { id: "daysmatter", name: "Days Matter", count: "1" }
     ],
     dockApps: [
       { id: "phone", name: "电话" },
       { id: "safari", name: "Safari" },
       { id: "chatgpt", name: "ChatGPT" }
+    ],
+    // 结局卡：合上最后一页日记之后出现，两条线各有一句自己的总结
+    endCard: {
+      kicker: "END",
+      open: {
+        title: "打开了他的手机",
+        line: "他准备好的那些话，你一句一句看完了。"
+      },
+      noOpen: {
+        title: "把手机放回了长椅",
+        line: "你没打开他的手机。他还是找到了你。"
+      }
+    },
+    // 她的备忘录不建文件夹，所有笔记平铺在一起（notesFlat）；不写 category，列表里也不会出现分类标签
+    notesFlat: true,
+    notes: [
+      {
+        date: "261210",
+        time: "23:47",
+        title: "12月10日",
+        body: "今天在汉江很冷。\n\n他把手机留给我，说自己就去一下。回来的时候手是红的，耳朵也是红的，还嘴硬说不冷。\n\n外卖到的时候，他把热的先递给我。\n\n有些话他好像一直没说出口。\n\n……那就等他自己说。"
+      },
+      {
+        date: "261209",
+        time: "21:18",
+        title: "要问他的",
+        body: "他那句「有话要跟我说」说了多久了\n\n* 到底去干嘛了 去那么久\n* 为什么一看我就笑\n* doori到底更喜欢谁\n* 上次的围巾是不是本来就要给我\n\n答不上来请我吃三次饭"
+      },
+      {
+        date: "261207",
+        time: "19:12",
+        title: "买",
+        body: "拍立得相纸\n暖宝宝 多买\n香蕉牛奶（冰箱只剩一瓶）\n给doori的小零食 不要买错口味\n\n对了 室友的生日礼物"
+      },
+      {
+        date: "261205",
+        time: "01:12",
+        body: "他那件灰色卫衣是不是还在我这\n\n洗了 但是还没还\n\n……不还也可以吧"
+      },
+      {
+        date: "261203",
+        time: "08:40",
+        title: "12.3 便利店的班",
+        body: "周四 18-22\n周六换班 要提前跟组长说\n\n12月排班表还没贴出来"
+      },
+      {
+        date: "261201",
+        time: "22:18",
+        title: "最近",
+        body: "最近老是遇到他。\n\n便利店、地铁、学校食堂，还有舞室。\n\n舞室那次他跳得很好看，我在下面喊得有点大声。\n\n回来之后一直在想要不要先问他。\n\n算了，等他先说 ㅎㅎ"
+      },
+      {
+        date: "261130",
+        time: "23:59",
+        title: "草稿",
+        body: "在干嘛\n（删掉）\n\n睡了吗\n（删掉）\n\n今天很开心\n\n……还是明天再说"
+      }
+    ],
+    // 她的日历：这些是固定的，和「他」见面的那一天会在运行时按选定的日期补上
+    calendar: [
+      { date: "2026-12-09", title: "便利店晚班", time: "18:00 - 22:00" },
+      { date: "2026-12-12", title: "和室友看电影", time: "15:00" },
+      { date: "2026-12-18", title: "期末小组讨论", time: "10:00" },
+      { date: "2026-12-19", title: "期末结束" }
+    ],
+    // Days Matter：固定几个日子；「和志薰见面」同样在运行时补到最前面
+    daysmatter: [
+      { title: "认识志薰", date: "2026-09-15", kind: "since", note: "香蕉牛奶" },
+      { title: "doori来家里", date: "2026-10-20", kind: "since" },
+      { title: "期末结束", date: "2026-12-19", kind: "until" },
+      { title: "下次发工资", date: "2027-01-10", kind: "until" },
+      { title: "寒假回家", date: "2027-01-16", kind: "until" }
+    ],
+    // 她自己的歌单。musicIndex 是打开 Apple Music 时停在哪一首
+    musicIndex: 0,
+    applemusic: [
+      { title: "My Love Mine All Mine", artist: "Mitski", cover: "mylove", glyph: "m", tint: ["#8b2446", "#d66c8c"] },
+      { title: "recently,", artist: "Liana Flores", cover: "recently", glyph: "r", tint: ["#c6d9b8", "#8dab84"] },
+      { title: "plot twist", artist: "TWS", cover: "plottwist", glyph: "✦", tint: ["#cdbbff", "#8fb9ff"] },
+      { title: "Friday (feat. Jang Yi-jeong)", artist: "IU", cover: "friday", glyph: "fri", tint: ["#ffab73", "#e85c53"] },
+      { title: "You", artist: "Fujii Kaze", cover: "youkaze", glyph: "you", tint: ["#bfe4ff", "#ffd7c2"] },
+      { title: "i love you", artist: "Billie Eilish", cover: "iloveyou", glyph: "♡", tint: ["#16383a", "#2e5a53"] },
+      { title: "Phonecert", artist: "10CM", cover: "phonecert", glyph: "10", tint: ["#e8a87c", "#b86b4b"] },
+      { title: "The Love Of Foreigner", artist: "AKMU", cover: "love", glyph: "L", tint: ["#6f2d3f", "#d16b4d"] },
+      { title: "green to blue (slowed + reverbed)", artist: "daniel.mp3", cover: "greenblue", glyph: "≋", tint: ["#4f8f86", "#2d5f8c"] }
     ],
     // 相册：点开是 3 列的照片墙，点任意一张可以看大图，左右滑动切换
     // person 是「人物」里那一栏，photos 里的 fav: true 表示已经点过小红心
@@ -971,7 +1094,7 @@ const phoneData = {
         { src: "pics/album/19.jpg" }
       ]
     },
-    // 转场旁白：一行一行浮现，轻触屏幕可以直接跳过
+    // 转场旁白：一行一行浮现；轻触一次先显示全文，再轻触一次才切到她的手机
     bridge: {
       lines: [
         "韩志薰回来了",
@@ -983,25 +1106,51 @@ const phoneData = {
     },
     story: {
       // 输入框里预先写好的那句话，由你来按下发送
-      sendText: "是明天吗？",
+      sendText: "明天要跟我说什么呀 我很期待 ㅎㅎ",
       // side "them" = 志薰，side "me" = 她
+      // 志薰的口癖：笑 ㅋㅋㅋㅌㅌㅎㅋ、哭 ㅠㅠㅠㅠ、感叹 ㅎㅎ、喜欢用「耶」结尾
+      // 她这边是暧昧期的语气：会接话、会撩回去，不冷冷地只回一个「好」
       messages: [
         { d: -13, time: "21:07", side: "them", text: "今天下班早" },
-        { d: -13, time: "21:09", side: "me", text: "那你早点休息" },
-        { d: -13, time: "21:10", side: "them", text: "嗯 你也是" },
+        { d: -13, time: "21:09", side: "me", text: "这么早？终于不用加班到半夜啦 ㅎㅎ" },
+        { d: -13, time: "21:10", side: "them", text: "嗯 你也是 ㅎㅎ" },
+        { d: -13, time: "21:11", side: "them", text: "今天舞室放了首超好听的歌 我跳了三遍才走 耶" },
+        { d: -13, time: "21:12", side: "me", text: "三遍？那一定很好看 下次跳给我看嘛" },
+        { d: -13, time: "21:13", side: "them", text: "真的要看吗 那我可能会紧张 ㅋㅋㅋㅌㅌㅎㅋ" },
+        { d: -13, time: "21:13", side: "me", text: "紧张什么 我又不会笑你 我只会一直看" },
+        { d: -13, time: "21:14", side: "them", text: "被你这么一说 我明天还想再去跳 ㅠㅠㅠㅠ" },
         { d: -9, time: "08:41", side: "them", text: "今天很冷 出门多穿点" },
-        { d: -9, time: "08:44", side: "me", text: "知道了 你也是" },
-        { d: -9, time: "08:45", side: "them", text: "围巾还在我这" },
-        { d: -9, time: "08:46", side: "me", text: "那就先借你" },
+        { d: -9, time: "08:44", side: "me", text: "知道啦 你才是 别只顾着说我 ㅎㅎ" },
+        { d: -9, time: "08:45", side: "them", text: "我穿了四层 现在像个球 ㅋㅋㅋ" },
+        { d: -9, time: "08:45", side: "me", text: "想看看球长什么样" },
+        { d: -9, time: "08:46", side: "them", text: "围巾还在我这 明天带给你" },
+        { d: -9, time: "08:47", side: "me", text: "不用还 你戴着吧 反正我也想看你戴" },
+        { d: -9, time: "08:47", side: "them", text: "好耶 那我天天戴 反正你说了借我 ㅎㅎ" },
+        { d: -9, time: "08:49", side: "me", text: "嗯 天天戴 我会检查的" },
+        { d: -9, time: "08:50", side: "them", text: "那我明天就戴着去见你 耶" },
         { d: -5, time: "19:22", side: "me", text: "doori今天乖吗" },
         { d: -5, time: "19:25", side: "them", text: "乖 就是把我拖鞋叼走了" },
-        { d: -5, time: "19:26", side: "me", text: "哈哈哈" },
-        { d: -5, time: "19:27", side: "them", text: "回头拍给你看" },
+        { d: -5, time: "19:25", side: "them", text: "叼走之后还坐在上面看我 好像在等我夸它 ㅋㅋㅋㅌㅌㅎㅋ" },
+        { d: -5, time: "19:26", side: "me", text: "哈哈哈 它是不是跟你学的 这么会撒娇" },
+        { d: -5, time: "19:27", side: "them", text: "它现在听得懂你名字哦" },
+        { d: -5, time: "19:28", side: "me", text: "真的假的 那它喜欢我吗" },
+        { d: -5, time: "19:29", side: "them", text: "真的 我一说ㅇㅇ 它耳朵就竖起来 耶" },
+        { d: -5, time: "19:30", side: "me", text: "那你要多替我说点好话 我还想讨好它呢" },
+        { d: -5, time: "19:31", side: "them", text: "……我本来也天天说 ㅎㅎ" },
         { d: -2, time: "22:03", side: "them", text: "年末有点忙 回消息可能会慢" },
-        { d: -2, time: "22:05", side: "me", text: "没关系 你忙你的" },
+        { d: -2, time: "22:05", side: "me", text: "没关系 忙完记得吃饭 别又只喝咖啡" },
+        { d: -2, time: "22:06", side: "them", text: "但是我不会忘的 真的" },
+        { d: -2, time: "22:06", side: "them", text: "有件事想跟你说 等我忙完 ㅎㅎ" },
+        { d: -2, time: "22:08", side: "me", text: "什么事呀 现在说一点点也不行吗" },
+        { d: -2, time: "22:09", side: "them", text: "不行 说了就没意思了 等我 耶" },
+        { d: -2, time: "22:10", side: "me", text: "那你最好快点忙完 我会一直想的" },
         { d: -1, time: "19:40", side: "them", text: "明天有空吗" },
-        { d: -1, time: "19:52", side: "me", text: "有啊" },
-        { d: -1, time: "19:53", side: "them", text: "嗯" }
+        { d: -1, time: "19:52", side: "me", text: "有啊 怎么 要请我吃饭吗 ㅎㅎ" },
+        { d: -1, time: "19:53", side: "them", text: "嗯" },
+        { d: -1, time: "19:53", side: "them", text: "那明天 我有话想跟你说 ㅎㅎ" },
+        { d: -1, time: "19:54", side: "them", text: "不是坏事 真的" },
+        { d: -1, time: "19:58", side: "me", text: "你这样说 我今晚要睡不着了" },
+        { d: -1, time: "19:59", side: "them", text: "那你就期待一下吧 耶" }
       ]
     },
     kakaotalk: {
@@ -1039,15 +1188,23 @@ const phoneData = {
         dateName: "平安夜",
         target: "2026-12-24",     // 跳转发生在它的前一天晚上
         sendTime: "22:41",
+        meetTime: "19:00",
         replies: [
-          { time: "22:43", text: "嗯。" },
-          { time: "22:43", text: "明天七点，舞室后面那家小酒馆。二楼靠窗，老板认识我，不吵。" },
-          { time: "22:44", text: "门口有台阶，别穿那双高跟的。" },
-          { time: "22:44", text: "我七点前到，你不用赶。" }
+          { time: "22:43", text: "嗯!!" },
+          { time: "22:43", text: "明天七点 舞室后面那家小酒馆 二楼靠窗 耶" },
+          { time: "22:44", text: "老板认识我 那个位置很安静 我提前打过招呼了 ㅎㅎ" },
+          { time: "22:44", text: "门口有台阶 别穿那双高跟的 真的" },
+          { time: "22:45", text: "我七点前到 你不用赶 ㅠㅠ" },
+          { time: "22:45", text: "刚刚想到明天 我好像有点睡不着了 ㅋㅋㅋ" }
         ],
         coda: {
           date: "12月24日 21:40",
-          lines: ["今天表白了。", "这样明天就能一起过圣诞了。"],
+          lines: [
+            "今天表白了。",
+            "说完之后她没讲话 我心跳快得像刚跳完一整支舞 ㅠㅠㅠㅠ",
+            "然后她笑了 说「嗯」。",
+            "这样明天就能一起过圣诞了 耶。"
+          ],
           quote: "明年也一起过吧。"
         }
       },
@@ -1055,15 +1212,23 @@ const phoneData = {
         dateName: "圣诞节",
         target: "2026-12-25",
         sendTime: "22:41",
+        meetTime: "16:00",
         replies: [
-          { time: "22:43", text: "嗯。" },
-          { time: "22:43", text: "明天四点，百货正门那棵大树下面。" },
-          { time: "22:44", text: "人很多，你跟紧我。" },
-          { time: "22:44", text: "有个东西要给你。" }
+          { time: "22:43", text: "嗯!!" },
+          { time: "22:43", text: "明天四点 百货正门那棵大树下面 耶" },
+          { time: "22:44", text: "那棵树今年挂了好多灯 我路过看了好几次 ㅎㅎ" },
+          { time: "22:44", text: "人很多 你跟紧我 我会一直牵着你的" },
+          { time: "22:45", text: "有个东西要给你 准备了很久的 ㅠㅠㅠㅠ" },
+          { time: "22:45", text: "啊 说漏嘴了 你就当没看到这句 ㅋㅋㅋㅌㅌㅎㅋ" }
         ],
         coda: {
           date: "12月25日 17:20",
-          lines: ["树下面很吵。", "我说的话，只有她听见了。"],
+          lines: [
+            "树下面很吵。",
+            "我说的话，只有她听见了。",
+            "她点头的时候 我差点当场哭出来 ㅠㅠㅠㅠ",
+            "这条我写在备忘录里了 以后每年都可以看 耶。"
+          ],
           quote: "我喜欢你。"
         }
       },
@@ -1071,18 +1236,401 @@ const phoneData = {
         dateName: "元旦",
         target: "2027-01-01",
         sendTime: "22:41",
+        meetTime: "05:30",
         replies: [
-          { time: "22:43", text: "是明天。不过不是晚上，是早上。" },
-          { time: "22:43", text: "五点半，我在你楼下。" },
-          { time: "22:44", text: "人多的地方我不太行，想找个安静点的。" },
-          { time: "22:44", text: "你只要下来就行。" }
+          { time: "22:43", text: "是明天 不过不是晚上 是早上 耶" },
+          { time: "22:43", text: "五点半 我在你楼下等你" },
+          { time: "22:44", text: "人多的地方我不太行 想找个安静点的 ㅎㅎ" },
+          { time: "22:44", text: "我带了热可可和暖宝宝 不会让你冷的" },
+          { time: "22:45", text: "你只要下来就行 真的" },
+          { time: "22:45", text: "……我已经开始紧张了 ㅋㅋㅋ" }
         ],
         coda: {
           date: "1月1日 07:46",
-          lines: ["太阳出来的时候，我问了她今年的第一个问题。"],
+          lines: [
+            "太阳出来的时候，我问了她今年的第一个问题。",
+            "她没马上回答 我紧张得手都不知道放哪 ㅠㅠㅠㅠ",
+            "然后她说「可以」。",
+            "新的一年 第一个见到的人是她 耶。"
+          ],
           quote: "今年我的身边可以有你吗。"
         }
       }
+    },
+    /*
+     * 「不打开」分支：不翻他的手机，直接跳到那天晚上她自己的手机。
+     * 每次进入都会随机抽一个 plans，再随机抽其中一个 ideas；
+     * 聊天里的 {place} / {detail} / {extra} / {dateWord} / {whenWord} 会被替换成抽中的内容。
+     * steps 里每一步都是一次玩家选择，choices 的 tone 决定最后那张日记卡上的那句话
+     * （warm 温柔 / tease 打趣 / shy 害羞 / hesitant 犹豫）。
+     */
+    noOpen: {
+      bridge: {
+        lines: [
+          "你把他的手机放回了长椅。",
+          "他说「等我一下」的时候，好像有点失望。",
+          "那天晚上回到房间，你自己的手机亮了一下。",
+          "是韩志薰。"
+        ]
+      },
+      // 聊天结束后他打来的那通电话：接听后播放 audio，caption 是他在电话里说的那句
+      // 音频放在「音频」文件夹里；换文件时记得同步改这里
+      call: {
+        from: "志薰",
+        kind: "KakaoTalk 语音通话",
+        subtitle: "邀请你进行语音通话",
+        againSubtitle: "又打来了",
+        avatar: "pics/jihun-avatar.jpg",
+        audio: "音频/辛苦了 晚安.m4a",
+        caption: "辛苦了，晚安。",
+        endingNote: "通话结束"
+      },
+      plans: [
+        {
+          id: "tomorrow",
+          dateWord: "12月11号",
+          whenWord: "明天",
+          lockTime: "23:06",
+          preview: "ㅇㅇ啊 睡了吗??",
+          target: "2026-12-11",
+          meetTime: "19:00",
+          ideas: [
+            { place: "가로수길那家一直想去的意面店", detail: "沿着汉江走一走", extra: "一条新围巾" },
+            { place: "学校附近那家烤肉店", detail: "去清溪川看灯", extra: "一盒草莓蛋糕" }
+          ],
+          opening: [
+            { time: "23:07", text: "ㅇㅇ啊 睡了吗??" },
+            { time: "23:07", text: "没睡的话 陪我说两分钟话吧 ㅎㅎ" },
+            { time: "23:08", text: "今天在汉江 我说去厕所" },
+            { time: "23:08", text: "其实不是 我是去给自己做心理建设了 ㅋㅋㅋㅌㅌㅎㅋ" },
+            { time: "23:09", text: "回来看到你在喂doori 话又咽回去了 ㅠㅠㅠㅠ" },
+            { time: "23:09", text: "所以现在 隔着手机 我好像比较勇敢 耶" }
+          ],
+          steps: [
+            {
+              choices: [
+                { text: "还没睡 怎么啦", tone: "warm", replies: ["好耶!!! 居然秒回", "那我就直说了 ㅎㅎ", "{whenWord} 你有空吗"] },
+                { text: "两分钟？你每次都说两分钟 ㅋㅋ", tone: "tease", replies: ["ㅋㅋㅋㅌㅌㅎㅋ 被你发现了", "那这次真的两分钟", "…好吧 可能要五分钟", "{whenWord} 你有空吗"] },
+                { text: "嗯 我在听", tone: "shy", replies: ["谢谢 ㅠㅠㅠㅠ", "你这么认真 我反而有点紧张了 ㅎㅎ", "{whenWord} 你有空吗"] },
+                { text: "有点晚了 明天还要早起…", tone: "hesitant", replies: ["啊 对哦 对不起!!", "那我长话短说 ㅎㅎ", "{whenWord} 晚上 你有空吗"] }
+              ]
+            },
+            {
+              lead: [
+                "我订了{place}",
+                "你不是说过想去吗 我一直记着耶",
+                "然后{detail} 我准备很久了 ㅎㅎ"
+              ],
+              choices: [
+                { text: "你还记得我说过想去那里", tone: "warm", replies: ["当然记得!! 你说的时候眼睛都亮了", "我当天就写进备忘录了 ㅋㅋ", "所以 可以吗 {whenWord}"] },
+                { text: "准备很久？比如什么", tone: "tease", replies: ["呀 这个是秘密 说了就没意思了 ㅋㅋㅋㅌㅌㅎㅋ", "只能告诉你 不是随便准备的 是很用心的那种!", "所以 {whenWord} 来不来 耶"] },
+                { text: "你别搞很大阵仗 我会紧张的…", tone: "shy", replies: ["那我不搞很大阵仗 ㅎㅎ", "就我们两个人 安安静静的", "不过该准备的我还是会准备耶", "所以 {whenWord} 可以吗"] },
+                { text: "我明天穿什么好…", tone: "hesitant", replies: ["穿暖一点!! 晚上江边很冷", "我带了{extra} 到时候给你", "所以 不用想太多 人来就行 ㅋㅋㅎㅋ"] }
+              ]
+            },
+            {
+              lead: [
+                "其实我今天一直在想要不要跟你说",
+                "姐姐说 稍微透点风的惊喜 才让人安心",
+                "所以我现在 把风透给你一点点 ㅎㅎ",
+                "{whenWord} 不只是吃饭 也不只是散步",
+                "是我想认真和你待在一起的一天 耶"
+              ],
+              choices: [
+                { text: "嗯 我也有点期待", tone: "warm", replies: ["真的吗!!! 你说了期待 我今天晚上睡不着了 ㅠㅠㅠㅠ", "那我要把{whenWord}准备得更好 耶"] },
+                { text: "透风透成这样 已经不算惊喜了吧 ㅋㅋ", tone: "tease", replies: ["ㅋㅋㅋㅌㅌㅎㅋ 完了 被我透完了", "那…至少剩下的部分 我还是想留到{whenWord} 耶"] },
+                { text: "你这样说我更紧张了…", tone: "shy", replies: ["我也是 我手都在抖 你看不到而已 ㅋㅋ", "但是我们一起紧张 好像也不错耶"] },
+                { text: "我还没想好…", tone: "hesitant", replies: ["没关系 真的没关系", "{whenWord} 你只要来 其他的都交给我 ㅎㅎ", "不来也可以 我会等 ㅠㅠ"] }
+              ]
+            },
+            {
+              lead: [
+                "最后一个问题 问完我就去睡 真的",
+                "{whenWord} 可以当作…约会吗",
+                "不是朋友那种 是我喜欢你那种 耶"
+              ],
+              choices: [
+                { text: "好呀 约会", tone: "warm", replies: ["……", "我现在在原地转圈 ㅋㅋㅋㅌㅌㅎㅋ", "{whenWord}见 ㅇㅇ啊 我会很早到的!!", "晚安 ㅎㅎ"] },
+                { text: "你先说清楚 是哪种约会", tone: "tease", replies: ["当然是 我喜欢你的那种 ㅎㅎ", "还要我说多少遍 我喜欢你 喜欢你 喜欢你 耶", "{whenWord}见!! 晚安 ㅋㅋ"] },
+                { text: "…嗯。", tone: "shy", replies: ["嗯是答应了吗 我可以这样理解吗 ㅠㅠㅠㅠ", "那{whenWord}我要牵你的手 可以吗", "……不用回 我当作可以了 ㅋㅋ 晚安"] },
+                { text: "让我再想想 可以吗", tone: "hesitant", replies: ["当然可以!! 慢慢想 我等你", "{whenWord}的位置我先留着 你不来也没关系", "但是 我有点希望你来 ㅎㅎ 晚安"] }
+              ]
+            }
+          ],
+          coda: {
+            date: "12月10日 23:58",
+            lines: [
+              "她没打开我的手机。",
+              "我准备了一整晚的台词，一句都没用上 ㅋㅋㅋ",
+              "可是她答应{whenWord}见我的时候，我在房间里跳了一下。",
+              "姐姐说得对，透一点风的惊喜，好像真的会让人安心。",
+              "{dateWord}。这次换我等耶。"
+            ],
+            quotes: {
+              warm: ["她说「好呀」的时候，我听见了自己的心跳。", "她答应得那么快，我反而有点想哭 ㅠㅠㅠㅠ"],
+              tease: ["她嘴上嫌我，最后还是答应了。", "被拆穿了也没关系 反正她来了 耶"],
+              shy: ["她回了一个「嗯」，我看了不止二十遍。", "原来一个「嗯」也可以让人睡不着。"],
+              hesitant: ["她说再想想。那我就等到她想好。", "等多久都可以 我很有耐心的 真的 ㅎㅎ"]
+            }
+          }
+        },
+        {
+          id: "eve",
+          dateWord: "12月24号",
+          whenWord: "平安夜",
+          lockTime: "23:04",
+          preview: "ㅇㅇ啊 今天谢谢你陪doori",
+          target: "2026-12-24",
+          meetTime: "19:00",
+          ideas: [
+            { place: "舞室后面那家小酒馆 二楼靠窗", detail: "去南山看灯", extra: "一条围巾" },
+            { place: "我家附近那家汤饭店", detail: "去汉江看平安夜的灯", extra: "暖宝宝和热可可" }
+          ],
+          opening: [
+            { time: "23:05", text: "ㅇㅇ啊 今天谢谢你陪doori" },
+            { time: "23:05", text: "还有 谢谢你没打开我的手机 ㅋㅋㅋ" },
+            { time: "23:06", text: "别问为什么 问就是里面有点丢人的东西 ㅋㅋㅌㅌㅎㅋ" },
+            { time: "23:06", text: "不过也好 这样我就只能自己说了 耶" },
+            { time: "23:07", text: "平安夜 你有安排吗" }
+          ],
+          steps: [
+            {
+              choices: [
+                { text: "还没安排 怎么啦", tone: "warm", replies: ["好耶!!! 那我不客气了 ㅎㅎ", "我想约你 平安夜"] },
+                { text: "你先说 是不是又想使唤我", tone: "tease", replies: ["ㅋㅋㅋㅌㅌㅎㅋ 不是使唤!!", "是很认真那种约", "平安夜 可以吗"] },
+                { text: "平安夜…你怎么突然问这个", tone: "shy", replies: ["因为我想约你 ㅎㅎ", "想了很久了 真的", "平安夜 可以吗"] },
+                { text: "平安夜店里可能会很忙…", tone: "hesitant", replies: ["啊 对 你在店里…", "那你几点下班 我去接你 ㅠㅠ", "晚一点也可以 真的!"] }
+              ]
+            },
+            {
+              lead: [
+                "我订了{place}",
+                "你不是说过想去吗 我一直记着耶",
+                "然后{detail} 我准备很久了 ㅎㅎ"
+              ],
+              choices: [
+                { text: "你还记得我说过想去那里", tone: "warm", replies: ["当然记得!! 你说的时候语气都不一样了", "我当天就写进备忘录了 ㅋㅋ", "所以 平安夜 可以吗"] },
+                { text: "准备很久？我怎么一点都没发现", tone: "tease", replies: ["因为我藏得很好 耶", "本来想再藏久一点的", "但是看到你今天把手机还给我 我就藏不住了 ㅎㅎ"] },
+                { text: "我有点紧张…那天人会不会很多", tone: "shy", replies: ["人多也没关系 你跟着我就行", "二楼靠窗 我订的是安静的位置", "其实我也有点紧张 ㅋㅋ"] },
+                { text: "我还没想好穿什么…", tone: "hesitant", replies: ["穿暖一点!! 那天会很冷", "我准备了{extra} 到时候给你", "所以 不用想太多 人来就行 耶"] }
+              ]
+            },
+            {
+              lead: [
+                "其实我从秋天开始就在想这天了",
+                "想了很多版本 又全部推翻 ㅋㅋㅋ",
+                "姐姐说 心意要自己说出口 才不算浪费",
+                "所以我现在 说出口了"
+              ],
+              choices: [
+                { text: "嗯 我听见了", tone: "warm", replies: ["谢谢 ㅠㅠㅠㅠ", "你这样说 我好像更有勇气了 耶", "那 平安夜见?"] },
+                { text: "韩志薰 你今天怎么这么会说", tone: "tease", replies: ["ㅋㅋㅎㅋㅎ 我练了很久的!!", "结果真的说出口还是结巴了", "你听出来了没 我刚刚手都在抖"] },
+                { text: "我…也有点想见你", tone: "shy", replies: ["!!!!!", "你这句话我要截图保存 耶", "平安夜 我会很早到的"] },
+                { text: "再给我一点时间 好吗", tone: "hesitant", replies: ["好 当然好", "那我先不催你 ㅎㅎ", "但是平安夜的位置 我会一直留着"] }
+              ]
+            },
+            {
+              lead: [
+                "最后一个问题 问完我就去睡觉 真的",
+                "平安夜 可以和我一起过吗",
+                "以 我喜欢你的人的身份 耶"
+              ],
+              choices: [
+                { text: "好呀 一起过", tone: "warm", replies: ["……", "我现在在房间里转圈 ㅋㅋㅋㅌㅌㅎㅋ", "平安夜见 ㅇㅇ啊 晚安 ㅎㅎ"] },
+                { text: "先说好 不许迟到", tone: "tease", replies: ["绝不迟到!! 我提前一个小时到 耶", "那你也不许放我鸽子 ㅠㅠ", "平安夜见 晚安 ㅎㅎ"] },
+                { text: "…嗯", tone: "shy", replies: ["嗯是答应了吗 我可以这样想吗 ㅠㅠㅠㅠ", "那我平安夜要牵你的手 可以吗", "不用回我 我当作可以了 ㅋㅋ 晚安"] },
+                { text: "我再想想 明天告诉你", tone: "hesitant", replies: ["好!! 我等你", "想多久都没关系 真的", "晚安 ㅎㅎ 做个好梦"] }
+              ]
+            }
+          ],
+          coda: {
+            date: "12月10日 23:57",
+            lines: [
+              "她没打开我的手机。",
+              "我以为计划全泡汤了。",
+              "结果我自己把话说了。她答应平安夜和我一起过。",
+              "放下手机我在阳台站了很久 一点都不冷 耶。"
+            ],
+            quotes: {
+              warm: ["她说好呀的时候，比南山所有的灯都亮。", "原来最亮的那天 可以自己造出来。"],
+              tease: ["她让我不许迟到。那我提前一个小时。", "被她管着的感觉 好像也不错 ㅋㅋ"],
+              shy: ["她只回了一个「嗯」。我盯着屏幕笑了很久。", "一个「嗯」就够我过完这个冬天了。"],
+              hesitant: ["她说再想想。那我就等。", "平安夜的位置我会一直留着 真的。"]
+            }
+          }
+        },
+        {
+          id: "christmas",
+          dateWord: "12月25号",
+          whenWord: "圣诞那天",
+          lockTime: "23:08",
+          preview: "ㅇㅇ啊 圣诞那天你有空吗",
+          target: "2026-12-25",
+          meetTime: "16:00",
+          ideas: [
+            { place: "百货正门那棵大树下面", detail: "去看一场小型live", extra: "一个真的礼物" },
+            { place: "剧场旁边那家咖啡店", detail: "去看圣诞档的音乐剧", extra: "一封手写的信" }
+          ],
+          opening: [
+            { time: "23:09", text: "ㅇㅇ啊 今天在汉江 我其实一直想说来着" },
+            { time: "23:09", text: "但是doori一直往我这边拱 我就忘了 ㅋㅋㅋ" },
+            { time: "23:10", text: "回家才想起来 然后懊恼到现在 ㅠㅠㅠㅠ" },
+            { time: "23:10", text: "所以 趁现在还没到十二点 我问你" },
+            { time: "23:11", text: "圣诞那天 你有空吗" }
+          ],
+          steps: [
+            {
+              choices: [
+                { text: "有呀 怎么了", tone: "warm", replies: ["好耶!!!", "那我就不绕弯子了 ㅎㅎ", "我想约你 圣诞那天"] },
+                { text: "你有话就直说 别又去厕所 ㅋㅋ", tone: "tease", replies: ["ㅋㅋㅋㅌㅌㅎㅋ 被嘲笑了", "好 我直说", "圣诞那天 我想约你"] },
+                { text: "圣诞…我还没想好要做什么", tone: "shy", replies: ["那正好 我已经想好了 耶", "你只要把那天留给我", "可以吗 ㅎㅎ"] },
+                { text: "圣诞店里可能会很忙", tone: "hesitant", replies: ["啊…这样", "那你下班之后呢 我可以等 ㅠㅠ", "多晚都可以 真的!"] }
+              ]
+            },
+            {
+              lead: [
+                "那天我约了{place}",
+                "然后{detail}",
+                "还有{extra} 这个不能提前说太多 ㅎㅎ"
+              ],
+              choices: [
+                { text: "听起来好棒", tone: "warm", replies: ["真的吗!! 我好开心 耶", "那就这样定了", "我会准备得很好很好的 ㅎㅎ"] },
+                { text: "你是不是又准备了很多 然后自己先紧张", tone: "tease", replies: ["……被你说中了 ㅋㅋㅎㅋㅎ", "我从上周就开始紧张了", "但是你答应的话 我就不紧张了 耶"] },
+                { text: "会不会太隆重了…", tone: "shy", replies: ["不会!! 一点都不隆重", "就是我想认真对待这一天", "你只要来 就已经很好了 ㅎㅎ"] },
+                { text: "那天人应该很多吧", tone: "hesitant", replies: ["嗯 会很多", "但是我会一直牵着你 不会走散的", "所以 可以吗 ㅎㅎ"] }
+              ]
+            },
+            {
+              lead: [
+                "其实 圣诞对我来说一直是很普通的一天",
+                "以前就是和姐姐吃个饭 然后回家",
+                "但是今年不一样了",
+                "今年我想和一个人一起过 想被她记住 耶"
+              ],
+              choices: [
+                { text: "那就一起过吧", tone: "warm", replies: ["!!!! 你说了一起过", "我现在笑得有点傻 ㅋㅋ", "圣诞那天 我会很早到的 耶"] },
+                { text: "被我记住这件事 你压力会不会很大", tone: "tease", replies: ["有点!! 但是我很期待 ㅋㅋㅋ", "我会努力让你记住的", "毕竟我准备了{extra} 耶"] },
+                { text: "我也想被你记住…", tone: "shy", replies: ["那我们扯平了 ㅎㅎ", "不对 是我赚了", "圣诞那天 我有话想当面说 ㅠㅠ"] },
+                { text: "我还不确定那天能不能去…", tone: "hesitant", replies: ["没关系 真的", "你先忙 我等你消息", "但是我会一直期待 ㅎㅎ"] }
+              ]
+            },
+            {
+              lead: [
+                "最后一个问题",
+                "圣诞那天 可以和我在一起吗",
+                "不是朋友那种 是我想牵你手的那种 耶"
+              ],
+              choices: [
+                { text: "可以", tone: "warm", replies: ["……", "我现在说不出话了 ㅋㅋㅋ", "圣诞见 ㅇㅇ啊 我会带{extra} 晚安 ㅎㅎ"] },
+                { text: "牵手要经过我同意才行", tone: "tease", replies: ["好 那我现在申请 ㅋㅋㅎㅋ", "可以吗 可以吗 可以吗", "……那我到时候再问一次 耶 晚安"] },
+                { text: "…好", tone: "shy", replies: ["好!!! 我听见了 ㅠㅠㅠㅠ", "圣诞那天 我会好好说一遍的", "晚安 ㅎㅎ 做个好梦"] },
+                { text: "给我一点时间 好吗", tone: "hesitant", replies: ["好 我等你", "圣诞还早 你慢慢想 真的", "晚安 ㅎㅎ"] }
+              ]
+            }
+          ],
+          coda: {
+            date: "12月10日 23:59",
+            lines: [
+              "她没打开我的手机。",
+              "我准备的那些东西 好像都用不上了。",
+              "可是她说可以的时候 我一点都不觉得可惜。",
+              "圣诞快点来吧。我已经等不及了 耶。"
+            ],
+            quotes: {
+              warm: ["她说可以。我在房间里笑出了声。", "原来最好的圣诞礼物 是她答应我。"],
+              tease: ["她让我先申请。那我申请一辈子 可以吗 ㅋㅋ", "被她为难的感觉 怎么就那么好 耶"],
+              shy: ["她只回了一个「好」。我听了三遍。", "今年圣诞 终于不是普通的一天了。"],
+              hesitant: ["她说再想想。没关系 圣诞还早。", "我会等 等到她愿意为止 真的。"]
+            }
+          }
+        },
+        {
+          id: "newYear",
+          dateWord: "1月1号",
+          whenWord: "元旦",
+          lockTime: "23:10",
+          preview: "ㅇㅇ啊 还没睡吧??",
+          target: "2027-01-01",
+          meetTime: "05:30",
+          ideas: [
+            { place: "你家楼下", detail: "去汉江看今年的第一个日出", extra: "热可可和暖宝宝" },
+            { place: "南山塔下面", detail: "去看新年第一场日出", extra: "一条手织的围巾" }
+          ],
+          opening: [
+            { time: "23:11", text: "ㅇㅇ啊 还没睡吧??" },
+            { time: "23:11", text: "今天把手机留给你的时候 我其实有点期待" },
+            { time: "23:12", text: "期待你会不会打开 ㅋㅋㅋ" },
+            { time: "23:12", text: "结果你没打开 我居然有点高兴 耶" },
+            { time: "23:13", text: "那样的话 就只能我亲口说了" },
+            { time: "23:13", text: "元旦那天 你有空吗" }
+          ],
+          steps: [
+            {
+              choices: [
+                { text: "元旦？有空的", tone: "warm", replies: ["好耶!!!", "那我先说好 那天会很早", "你会不会起不来 ㅋㅋ"] },
+                { text: "这么晚问 是不是预谋很久了", tone: "tease", replies: ["ㅋㅋㅋㅌㅌㅎㅋ 被发现了", "从秋天开始预谋的 耶", "所以 元旦有空吗"] },
+                { text: "元旦…你怎么会想到那天", tone: "shy", replies: ["因为是一年的第一天 ㅎㅎ", "我想第一个见到你", "可以吗"] },
+                { text: "元旦可能会和家里一起…", tone: "hesitant", replies: ["啊 对哦", "那…那前一天晚上呢 ㅠㅠ", "或者你什么时候方便 我都行 真的"] }
+              ]
+            },
+            {
+              lead: [
+                "那天早上五点半 我会在{place}等你",
+                "然后{detail}",
+                "我还准备了{extra} 不会让你冷的 耶"
+              ],
+              choices: [
+                { text: "五点半…好早", tone: "warm", replies: ["早才有意义 ㅎㅎ", "而且我想和你一起看太阳出来", "所以 起得来吗 耶"] },
+                { text: "万一我起不来呢", tone: "tease", replies: ["那我就等到你起来 ㅋㅋ", "等到太阳下山也行", "……不过还是希望你来 ㅠㅠ"] },
+                { text: "第一次一起看日出 有点紧张", tone: "shy", replies: ["我也是 真的", "但是紧张好像也挺好的 ㅎㅎ", "我会先到 给你占个最好的位置 耶"] },
+                { text: "太早了 我怕我状态不好", tone: "hesitant", replies: ["没关系 状态不好也好看", "……啊 我是不是说太直白了 ㅋㅋ", "你人来就行 真的"] }
+              ]
+            },
+            {
+              lead: [
+                "其实我一直在想 怎么开口才不算唐突",
+                "想了很久 想到今天都要过完了",
+                "后来发现 好像怎么说都会紧张",
+                "那就干脆不准备了 把想说的直接说 耶"
+              ],
+              choices: [
+                { text: "你说吧 我听着", tone: "warm", replies: ["谢谢 ㅠㅠㅠㅠ", "你这么一说 我又不知道从哪开始了 ㅋㅋ", "那就从最简单的开始吧"] },
+                { text: "不准备反而更让人期待了", tone: "tease", replies: ["那我更要好好说了 ㅎㅎ", "虽然可能会结巴", "你别笑我 真的"] },
+                { text: "我好像知道你要说什么…", tone: "shy", replies: ["!! 你知道?", "那我还是要说完 耶", "因为这句话 我想亲口说"] },
+                { text: "你不用勉强自己", tone: "hesitant", replies: ["不是勉强 真的不是", "是我自己想说的", "想了很久的那种想 ㅎㅎ"] }
+              ]
+            },
+            {
+              lead: [
+                "今年最后一天 我想和你一起过",
+                "明年第一天 我想第一个见到你",
+                "今年我的身边 可以有你吗"
+              ],
+              choices: [
+                { text: "可以 我也想", tone: "warm", replies: ["……", "我现在在房间原地跳 ㅋㅋㅋㅌㅌㅎㅋ", "元旦见 ㅇㅇ啊 晚安 耶"] },
+                { text: "先看你明天能不能起得来 ㅋㅋ", tone: "tease", replies: ["我一定起得来!! 我定十个闹钟", "那说好了 元旦见 耶", "晚安 ㅎㅎ"] },
+                { text: "…嗯", tone: "shy", replies: ["嗯是答应了吗 ㅠㅠㅠㅠ", "那我元旦要牵你的手", "可以吗 不用回答 我当作可以了 ㅋㅋ 晚安"] },
+                { text: "让我想一想 好吗", tone: "hesitant", replies: ["好 当然好", "今年还有几天 我等你", "晚安 ㅎㅎ 想你"] }
+              ]
+            }
+          ],
+          coda: {
+            date: "12月10日 23:59",
+            lines: [
+              "她没打开我的手机。",
+              "没关系 我还是把想说的都说了。",
+              "她答应了 明年第一天第一个见到我。",
+              "今年的最后一天 好像突然有了盼头 耶。"
+            ],
+            quotes: {
+              warm: ["她说「可以」。我把这两个字在心里放了一整晚。", "明年第一天 会是很好的一年。"],
+              tease: ["她让我先证明起得来。那我定十个闹钟 耶", "被她这样一说 我更睡不着了 ㅋㅋ"],
+              shy: ["她只回了一个「嗯」。我抱着手机笑了半天。", "原来「嗯」也可以是一句情话。"],
+              hesitant: ["她说再想想。那我就等到今年结束。", "反正新的一年 我最先想见的人 不会变。"]
+            }
+          }
+        }
+      ]
     }
   }
 };
